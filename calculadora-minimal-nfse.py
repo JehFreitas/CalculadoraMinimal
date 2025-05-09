@@ -8,43 +8,57 @@ getcontext().prec = 10
 
 st.set_page_config(page_title="Calculadora Comercial Minimal NFe+NFSe", layout="wide")
 
-# Estilo visual em azul baseado no logo da Minimal
+# Personalização visual com logo e estilo da Minimal
 st.markdown("""
 <style>
 body {
-    background-color: #F9FAFB;
-    font-family: 'Segoe UI', sans-serif;
+    background-color: #f6f8fa;
 }
-.main .block-container {
+.block-container {
     padding-top: 2rem;
-    padding-bottom: 2rem;
 }
-h1, h2, h3, h4, h5, h6 {
-    color: #5C849C;
+h1, h2, h3, h4 {
+    color: #000000;
+    font-family: 'Helvetica Neue', sans-serif;
 }
-label, .stTextInput > div > div > input, .stNumberInput input, .stSelectbox, .stRadio > div, .stDateInput input {
-    color: #5C849C;
+.css-18e3th9 {
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
-.stButton>button {
-    background-color: #5C849C;
-    color: white;
-    border-radius: 8px;
-    border: none;
-    padding: 0.4rem 1rem;
+/* Personalização dos botões de rádio */
+[data-baseweb="radio"] > div {
+    background-color: #ffffff;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
 }
-.stButton>button:hover {
-    background-color: #5C849C;
+[data-baseweb="radio"] label span {
+    color: #558699;
+    font-weight: 500;
 }
-div[data-baseweb="radio"] > div {
-    gap: 0.5rem;
+[data-baseweb="radio"] input:checked + div {
+    background-color: #558699 !important;
+    color: #ffffff !important;
+} 
+/* Personalização da borda dos campos de entrada e selects */
+.stNumberInput input[type="number"] {
+    border: 1px solid #558699 !important;
+    border-radius: 6px !important;
+    height: 2.5rem !important;
+    padding: 0 0.75rem !important;
+    line-height: 1.2rem !important;
+    background-color: #f8fafc;
 }
-div[data-baseweb="radio"] label span:first-child {
-    background-color: #5C849C !important;
-    border-color: #5C849C !important;
-}
-div[data-baseweb="radio"] label:hover span:first-child {
-    background-color: #5C849C !important;
-    border-color: #5C849C !important;
+.stSelectbox div[data-baseweb="select"] > div {
+    border: 1px solid #558699 !important;
+    border-radius: 6px !important;
+    height: 2.5rem !important;
+    padding: 0 0.75rem !important;
+    line-height: 1.2rem !important;
+    display: flex;
+    align-items: center;
+    background-color: #f8fafc;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -112,8 +126,8 @@ with st.form("formulario"):
     cidade = st.selectbox("Cidade de destino", ["Capital", "Interior"])
     horario = st.radio("Horário da entrega", ["Comercial", "Fora do comercial"])
     tem_ie = st.radio("Cliente possui inscrição estadual?", ["Sim", "Não"])
-    frete_opcao = st.radio("Frete", ["Calcular Salis", "Informar valor negociado", "Não contratar"])
-    montagem_opcao = st.radio("Montagem", ["Calcular automaticamente", "Valor negociado", "Não contratar"])
+    frete_opcao = st.radio("Frete", ["Calcular", "Informar valor negociado", "Não contratar"])
+    montagem_opcao = st.radio("Montagem", ["Calcular", "Informar valor negociado", "Não contratar"])
 
     frete_negociado = 0
     montagem_negociada = 0
@@ -122,7 +136,7 @@ with st.form("formulario"):
         frete_negociado = st.number_input("Valor negociado do frete", min_value=0.0, format="%.2f")
     if montagem_opcao == "Valor negociado":
         montagem_negociada = st.number_input("Valor negociado da montagem", min_value=0.0, format="%.2f")
-    if montagem_opcao == "Calcular automaticamente" and estado != "São Paulo":
+    if montagem_opcao == "Calcular" and estado != "São Paulo":
         km_ida_volta = st.number_input("Distância ida e volta (km) de Barueri-SP", min_value=0.0, format="%.2f")
 
     submit = st.form_submit_button("Calcular")
@@ -137,7 +151,7 @@ if submit:
     FCP = Decimal(TABELA_FCP.get(estado, 0))
 
     frete_base = Decimal(0)
-    if frete_opcao == "Calcular Salis":
+    if frete_opcao == "Calcular":
         if estado == "São Paulo":
             frete_base = valor_produtos_nfe * Decimal("0.03") if cidade == "Capital" and horario == "Comercial" else valor_produtos_nfe * Decimal("0.04")
         else:
@@ -148,7 +162,7 @@ if submit:
         frete_base = Decimal(frete_negociado)
 
     montagem_base = Decimal(0)
-    if montagem_opcao == "Calcular automaticamente":
+    if montagem_opcao == "Calcular":
         if estado == "São Paulo" and cidade == "Capital":
             montagem_base = valor_produtos_nfe * Decimal("0.035")
         else:
