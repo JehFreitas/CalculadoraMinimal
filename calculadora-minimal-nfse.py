@@ -100,7 +100,7 @@ if submit:
             frete_base = valor_produtos_nfe * Decimal("0.03") if cidade == "Capital" and horario == "Comercial" else valor_produtos_nfe * Decimal("0.04")
         else:
             percentual = TABELA_SALIS.get((estado, cidade), Decimal("0.0"))
-            base_frete = valor_produtos_nfe if valor_produtos_nfe > 18000 else Decimal("18000.00")
+            base_frete = valor_produtos_nfe if valor_produtos_nfe > 30000 else Decimal("30000.00")
             frete_base = base_frete * Decimal(percentual or 0)
     elif frete_opcao == "Informar valor negociado":
         frete_base = Decimal(frete_negociado)
