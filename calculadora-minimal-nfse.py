@@ -239,45 +239,45 @@ if submit:
     st.write(f"Guia FCP: {formatar(guia_fcp)}")
 
 
-# Geração do PDF
-buffer = io.BytesIO()
-c = canvas.Canvas(buffer, pagesize=A4)
-width, height = A4
-
-# Cabeçalho
-linha = height - 50
-c.drawImage("logo_minimal.png", 40, 805, width=70, preserveAspectRatio=True, mask='auto')
-c.setFont("Helvetica-Bold", 14)
-c.setFillColorRGB(0.333, 0.525, 0.6)
-c.drawString(150, 830, "Calculadora Comercial - Minimal Design")
-c.setFillColorRGB(0, 0, 0)
-c.setFont("Helvetica", 10)
-
-linha = 800
-for titulo, valor in [
-    ("Data:", str(data)),
-    ("Cliente:", cliente),
-    ("Orçamento:", orcamento),
-    ("Valor dos produtos:", f"{formatar(valor_produtos)}"),
-    ("Frete:", f"{formatar(frete_final)}"),
-    ("Montagem:", f"{formatar(montagem_final)}"),
-    ("Multiplicador:", f"{multiplicador:.5f}"),
-    ("Difal embutido:", f"{formatar(difal_embutido)}"),
-    ("FCP embutido:", f"{formatar(fcp_embutido)}"),
-    ("Despesas acessórias:", f"{formatar(despesas_acessorias)}"),
-    ("Valor do IPI:", f"{formatar(valor_ipi)}"),
-    ("Valor da NF:", f"{formatar(valor_nf)}"),
-    ("Guia Difal:", f"{formatar(guia_difal)}"),
-    ("Guia FCP:", f"{formatar(guia_fcp)}")
-]:
-    linha -= 15
-    c.setFont("Helvetica-Bold", 10)
+     # Geração do PDF
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # Cabeçalho
+    linha = height - 50
+    c.drawImage("logo_minimal.png", 40, 805, width=70, preserveAspectRatio=True, mask='auto')
+    c.setFont("Helvetica-Bold", 14)
     c.setFillColorRGB(0.333, 0.525, 0.6)
-    c.drawString(40, linha, titulo)
-    c.setFont("Helvetica", 10)
+    c.drawString(150, 830, "Calculadora Comercial - Minimal Design")
     c.setFillColorRGB(0, 0, 0)
-    c.drawString(160, linha, valor)
-
+    c.setFont("Helvetica", 10)
+    
+    linha = 800
+    for titulo, valor in [
+        ("Data:", str(data)),
+        ("Cliente:", cliente),
+        ("Orçamento:", orcamento),
+        ("Valor dos produtos:", f"{formatar(valor_produtos)}"),
+        ("Frete:", f"{formatar(frete_final)}"),
+        ("Montagem:", f"{formatar(montagem_final)}"),
+        ("Multiplicador:", f"{multiplicador:.5f}"),
+        ("Difal embutido:", f"{formatar(difal_embutido)}"),
+        ("FCP embutido:", f"{formatar(fcp_embutido)}"),
+        ("Despesas acessórias:", f"{formatar(despesas_acessorias)}"),
+        ("Valor do IPI:", f"{formatar(valor_ipi)}"),
+        ("Valor da NF:", f"{formatar(valor_nf)}"),
+        ("Guia Difal:", f"{formatar(guia_difal)}"),
+        ("Guia FCP:", f"{formatar(guia_fcp)}")
+    ]:
+        linha -= 15
+        c.setFont("Helvetica-Bold", 10)
+        c.setFillColorRGB(0.333, 0.525, 0.6)
+        c.drawString(40, linha, titulo)
+        c.setFont("Helvetica", 10)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawString(160, linha, valor)
+    
     linha -= 25
     c.setFont("Helvetica-Bold", 10)
     c.setFillColorRGB(0.333, 0.525, 0.6)
@@ -305,3 +305,4 @@ for titulo, valor in [
         file_name=file_name,
         mime="application/pdf"
     )
+
