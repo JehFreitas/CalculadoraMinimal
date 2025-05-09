@@ -1,4 +1,4 @@
-# calculadora-minimal-nfe.py
+ # calculadora-minimal-nfe.py
 
 import io
 from reportlab.lib.pagesizes import A4
@@ -429,13 +429,17 @@ if submit:
     c.save()
     buffer.seek(0)
 
+    # Geração do nome do arquivo (fora do botão)
+    nome_cliente = cliente.strip().replace(" ", "_") or "Cliente"
+    nome_orcamento = orcamento.strip().replace(" ", "_") or "Orcamento"
+    file_name = f"Simulacao_{nome_cliente}_{nome_orcamento}.pdf"
+
+    # Botão de download
     st.download_button(
         label="📄 Baixar PDF do Resultado",
         data=buffer,
-        nome_cliente = cliente.strip().replace(" ", "_") or "Cliente"
-        nome_orcamento = orcamento.strip().replace(" ", "_") or "Orcamento"
-        file_name = f"Simulacao_{nome_cliente}_{nome_orcamento}.pdf"
-
+        file_name=file_name,
+        mime="application/pdf"
     )
 
 
