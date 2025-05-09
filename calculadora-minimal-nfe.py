@@ -1,4 +1,4 @@
-# simulador_frete.py
+# calculadora-minimal-nfe.py
 
 import io
 from reportlab.lib.pagesizes import A4
