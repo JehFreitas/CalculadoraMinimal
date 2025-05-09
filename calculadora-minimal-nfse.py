@@ -215,12 +215,17 @@ if submit:
     valor_nfse = valor_produtos_nfse + montagem_final
 
     # SAÍDA VISUAL
-    st.subheader("Resumo da Nota Fiscal de Produtos (NFe)")
-    st.write(f"Produtos (60%): {formatar(valor_produtos_nfe)}")
-    st.write(f"Frete: {formatar(frete_final)}")
-    st.write(f"IPI: {formatar(valor_ipi)}")
+
+    st.subheader("Valores Calculados")
+    st.write(f"Cotação do frete: {formatar(frete_base)}")
+    st.write(f"Cotação da montagem: {formatar(montagem_base)}")
     st.write(f"Difal embutido: {formatar(difal_embutido)}")
     st.write(f"FCP embutido: {formatar(fcp_embutido)}")
+    
+    st.subheader("Resumo da Nota Fiscal de Produtos (NFe)")
+    st.write(f"Produtos (60%): {formatar(valor_produtos_nfe)}")
+    st.write(f"Valor do Frete: {formatar(frete_final)}")
+    st.write(f"IPI: {formatar(valor_ipi)}")
     st.write(f"Despesas acessórias: {formatar(despesas_acessorias)}")
     st.write(f"Valor total da NFe: {formatar(valor_nfe)}")
 
@@ -228,3 +233,7 @@ if submit:
     st.write(f"Produtos (40%): {formatar(valor_produtos_nfse)}")
     st.write(f"Montagem: {formatar(montagem_final)}")
     st.write(f"Valor total da NFSe: {formatar(valor_nfse)}")
+
+    st.subheader("Guias")
+    st.write(f"Guia Difal: {formatar(guia_difal)}")
+    st.write(f"Guia FCP: {formatar(guia_fcp)}")
