@@ -64,8 +64,54 @@ else:
 frete_liquido = BASE - t_imp_frete
 multiplicador = BASE / frete_liquido if frete_liquido > 0 else Decimal("1.0")
 
+# ===========================
+# CÁLCULOS FISCAIS SOBRE A NFe (60%)
+# ===========================
+if tem_ie == "Não":
+    base_difal1 = (valor_produtos_nfe + frete_final) / (1 - DIFAL - FCP)
+    base_difal2 = 1 - ((IPI * (1 - DIFAL - FCP)) / (1 + IPI))
+    base_difal = base_difal1 / base_difal2
+
+    guia_difal = base_difal * DIFAL
+    guia_fcp = base_difal * FCP
+    valor_ipi = base_difal * IPI / (1 + IPI)
+
+    difal_embutido = ((base_difal - valor_produtos_nfe - frete_final - valor_ipi) * DIFAL) / (DIFAL + FCP) if (DIFAL + FCP) != 0 else Decimal(0)
+    fcp_embutido = base_difal - valor_produtos_nfe - frete_final - difal_embutido - valor_ipi
+else:
+    base_difal = valor_produtos_nfe + frete_final
+    guia_difal = Decimal(0)
+    guia_fcp = Decimal(0)
+    valor_ipi = base_difal * IPI / (1 + IPI)
+    difal_embutido = Decimal(0)
+    fcp_embutido = Decimal(0)
+
+# Despesas acessórias e valor final da NFe
+despesas_acessorias = base_difal - valor_produtos_nfe - frete_final - valor_ipi if guia_difal > 0 else Decimal(0)
+valor_nfe = valor_produtos_nfe + frete_final + valor_ipi + despesas_acessorias
+
+
 # ====================
 # Valores finais aplicando multiplicador
 # ====================
 frete_final = frete_base * multiplicador
 montagem_final = montagem_base * multiplicador
+# ===========================
+# CÁLCULO NFSe
+# ===========================
+valor_nfse = valor_produtos_nfse + montagem_final
+st.subheader("Resumo da Nota Fiscal de Produtos (NFe)")
+st.write(f"Valor dos produtos (60%): {formatar(valor_produtos_nfe)}")
+st.write(f"Valor do Frete: {formatar(frete_final)}")
+st.write(f"Valor do IPI: {formatar(valor_ipi)}")
+st.write(f"Difal embutido: {formatar(difal_embutido)}")
+st.write(f"FCP embutido: {formatar(fcp_embutido)}")
+st.write(f"Despesas acessórias: {formatar(despesas_acessorias)}")
+st.write(f"Valor total da NFe: {formatar(valor_nfe)}")
+
+st.subheader("Resumo da Nota Fiscal de Serviço (NFSe)")
+st.write(f"Valor dos produtos (40%): {formatar(valor_produtos_nfse)}")
+st.write(f"Valor da Montagem: {formatar(montagem_final)}")
+st.write(f"Valor total da NFSe: {formatar(valor_nfse)}")
+
+
