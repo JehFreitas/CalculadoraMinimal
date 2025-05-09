@@ -231,7 +231,7 @@ if submit:
 
     st.subheader("Resumo da Nota Fiscal de Serviço (NFSe)")
     st.write(f"Produtos (40%): {formatar(valor_produtos_nfse)}")
-    st.write(f"Montagem: {formatar(montagem_final)}")
+    st.write(f"Valor da Montagem: {formatar(montagem_final)}")
     st.write(f"Valor total da NFSe: {formatar(valor_nfse)}")
 
     st.subheader("Guias")
