@@ -432,8 +432,10 @@ if submit:
     st.download_button(
         label="📄 Baixar PDF do Resultado",
         data=buffer,
-        file_name=f"simulacao_frete_{cliente.replace(' ', '_')}.pdf",
-        mime="application/pdf"
+        nome_cliente = cliente.strip().replace(" ", "_") or "Cliente"
+        nome_orcamento = orcamento.strip().replace(" ", "_") or "Orcamento"
+        file_name = f"Simulacao_{nome_cliente}_{nome_orcamento}.pdf"
+
     )
 
 
