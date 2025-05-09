@@ -3,6 +3,9 @@
 import streamlit as st
 from decimal import Decimal, getcontext
 from datetime import date
+import io
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
 
 getcontext().prec = 10
 
