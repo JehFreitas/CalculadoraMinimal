@@ -20,10 +20,10 @@ body {
     padding-bottom: 2rem;
 }
 h1, h2, h3, h4, h5, h6 {
-    color: #2F4F5E;
+    color: #5C849C;
 }
 label, .stTextInput > div > div > input, .stNumberInput input, .stSelectbox, .stRadio > div, .stDateInput input {
-    color: #2F4F5E;
+    color: #5C849C;
 }
 .stButton>button {
     background-color: #5C849C;
@@ -33,7 +33,7 @@ label, .stTextInput > div > div > input, .stNumberInput input, .stSelectbox, .st
     padding: 0.4rem 1rem;
 }
 .stButton>button:hover {
-    background-color: #45728A;
+    background-color: #5C849C;
 }
 div[data-baseweb="radio"] > div {
     gap: 0.5rem;
@@ -43,8 +43,8 @@ div[data-baseweb="radio"] label span:first-child {
     border-color: #5C849C !important;
 }
 div[data-baseweb="radio"] label:hover span:first-child {
-    background-color: #45728A !important;
-    border-color: #45728A !important;
+    background-color: #5C849C !important;
+    border-color: #5C849C !important;
 }
 </style>
 """, unsafe_allow_html=True)
