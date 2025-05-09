@@ -263,13 +263,12 @@ if submit:
         ("Orçamento:", orcamento),
         ("Valor dos produtos:", f"{formatar(valor_produtos)}"),
         ("Frete:", f"{formatar(frete_final)}"),
-        ("Montagem:", f"{formatar(montagem_final)}"),
         ("Multiplicador:", f"{multiplicador:.5f}"),
         ("Difal embutido:", f"{formatar(difal_embutido)}"),
         ("FCP embutido:", f"{formatar(fcp_embutido)}"),
         ("Despesas acessórias:", f"{formatar(despesas_acessorias)}"),
         ("Valor do IPI:", f"{formatar(valor_ipi)}"),
-        ("Valor da NF:", f"{formatar(valor_nf)}"),
+        ("Valor da NF:", f"{formatar(valor_nfe)}"),
         ("Guia Difal:", f"{formatar(guia_difal)}"),
         ("Guia FCP:", f"{formatar(guia_fcp)}")
     ]:
