@@ -280,6 +280,23 @@ if submit:
         c.setFillColorRGB(0, 0, 0)
         c.drawString(160, linha, valor)
     
+    
+    linha -= 25
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColorRGB(0.333, 0.525, 0.6)
+    c.drawString(40, linha, "Resumo da Nota Fiscal (NFe)")
+    linha -= 15
+    c.setFont("Helvetica", 10)
+    c.setFillColorRGB(0, 0, 0)
+    c.drawString(40, linha, f"Produtos (60%): {formatar(valor_produtos)}")
+    linha -= 15
+    c.drawString(40, linha, f"Montagem: {formatar(montagem_final)}")
+    linha -= 15
+    c.drawString(40, linha, f"Valor total da NFSe: {formatar(valor_nfse)}")
+    c.save()
+    buffer.seek(0)
+
+
     linha -= 25
     c.setFont("Helvetica-Bold", 10)
     c.setFillColorRGB(0.333, 0.525, 0.6)
