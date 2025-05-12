@@ -191,8 +191,12 @@ if submit:
     frete_liquido = BASE - t_imp_frete
     multiplicador = BASE / frete_liquido if frete_liquido > 0 else Decimal("1.0")
 
-    frete_final = frete_base * multiplicador
-    montagem_final = montagem_base * multiplicador
+    if estado == "São Paulo" and cidade == "Capital":
+        frete_final = Decimal(0)
+        montagem_final = Decimal(0)
+    else:
+        frete_final = frete_base * multiplicador
+        montagem_final = montagem_base * multiplicador
 
     if tem_ie == "Não":
         base_difal1 = (valor_produtos_nfe + frete_final) / (1 - DIFAL - FCP)
