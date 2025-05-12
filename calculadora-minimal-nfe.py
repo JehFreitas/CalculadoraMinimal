@@ -326,8 +326,6 @@ if submit:
     linha -= 15
     c.setFont("Helvetica", 10)
     c.setFillColorRGB(0, 0, 0)
-    c.drawString(40, linha, f"Produtos (60%): {formatar(valor_produtos_nfe)}")
-    linha -= 15
     c.drawString(40, linha, f"Frete: {formatar(frete_final)}")
     linha -= 15
     c.drawString(40, linha, f"Montagem: {formatar(montagem_final)}")
