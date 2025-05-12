@@ -35,7 +35,7 @@ st.markdown("""
 
     /* ✅ AUMENTA A FONTE DAS PERGUNTAS (labels dos campos) */
     label, .stRadio > label, .stSelectbox > label, .stNumberInput > label, .stTextInput > label {
-        font-size: 1.2rem !important;
+        font-size: 1.8rem !important;
         font-weight: 700 !important;
         color: #000000 !important;
     }
