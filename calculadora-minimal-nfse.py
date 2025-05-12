@@ -293,7 +293,6 @@ if submit:
     c.drawString(40, linha, f"Frete: {formatar(frete_final)}")
     linha -= 15
     c.drawString(40, linha, f"Valor total da NFe: {formatar(valor_nfe)}")
-    c.save()
     buffer.seek(0)
      
     linha -= 25
@@ -308,7 +307,6 @@ if submit:
     c.drawString(40, linha, f"Montagem: {formatar(montagem_final)}")
     linha -= 15
     c.drawString(40, linha, f"Valor total da NFSe: {formatar(valor_nfse)}")
-    c.save()
     buffer.seek(0)
 
     linha -= 25
