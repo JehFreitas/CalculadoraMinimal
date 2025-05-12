@@ -13,69 +13,56 @@ st.set_page_config(page_title="Calculadora Comercial Minimal NFe+NFSe", layout="
 
 # Personalização visual com logo e estilo da Minimal
 st.markdown("""
-<style>
-body {
-    background-color: #f6f8fa;
-}
-.block-container {
-    padding-top: 2rem;
-}
-h1, h2, h3, h4 {
-    color: #000000;
-    font-family: 'Helvetica Neue', sans-serif;
-}
-.css-18e3th9 {
-    padding: 1rem;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-
-/* Personalização dos botões de rádio (colocar o botão ao lado da opção) */
-[data-baseweb="radio"] > div {
-    background-color: #ffffff;
-    border-radius: 50% !important; /* Torna o botão redondo */
-    padding: 0.25rem 0.5rem;
-    display: inline-flex; /* Exibe os itens em linha (horizontal) */
-    align-items: center; /* Alinha o botão e a opção verticalmente */
-}
-
-[data-baseweb="radio"] input {
-    margin-right: 10px; /* Ajusta o espaço entre o botão e o texto da opção */
-    width: 20px;  /* Ajuste no tamanho do círculo */
-    height: 20px; /* Ajuste no tamanho do círculo */
-}
-
-[data-baseweb="radio"] label span {
-    color: #558699;
-    font-weight: 500;
-    font-size: 1rem; /* Ajuste no tamanho da fonte */
-    margin-left: 8px; /* Ajuste no espaço entre o botão e a opção */
-}
-
-[data-baseweb="radio"] input:checked + div {
-    background-color: #558699 !important; /* Cor azul para os botões selecionados */
-    color: #ffffff !important;
-
-/* Personalização da borda dos campos de entrada e selects */
-.stNumberInput input[type="number"] {
-    border: 1px solid #558699 !important;
-    border-radius: 6px !important;
-    height: 2.5rem !important;
-    padding: 0 0.75rem !important;
-    line-height: 1.2rem !important;
-    background-color: #f8fafc;
-}
-.stSelectbox div[data-baseweb="select"] > div {
-    border: 1px solid #558699 !important;
-    border-radius: 6px !important;
-    height: 2.5rem !important;
-    padding: 0 0.75rem !important;
-    line-height: 1.2rem !important;
-    display: flex;
-    align-items: center;
-    background-color: #f8fafc;
-}
+    <style>
+    body {
+        background-color: #f6f8fa;
+    }
+    .block-container {
+        padding-top: 2rem;
+    }
+    h1, h2, h3, h4 {
+        color: #000000;
+        font-family: 'Helvetica Neue', sans-serif;
+    }
+    .css-18e3th9 {
+        padding: 1rem;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+        /* Personalização dos botões de rádio */
+    [data-baseweb="radio"] > div {
+        background-color: #ffffff;
+        border-radius: 6px;
+        padding: 0.25rem 0.5rem;
+    }
+    [data-baseweb="radio"] label span {
+        color: #558699;
+        font-weight: 500;
+    }
+    [data-baseweb="radio"] input:checked + div {
+        background-color: #558699 !important;
+        color: #ffffff !important;
+    } 
+                /* Personalização da borda dos campos de entrada e selects */
+    .stNumberInput input[type="number"] {
+        border: 1px solid #558699 !important;
+        border-radius: 6px !important;
+        height: 2.5rem !important;
+        padding: 0 0.75rem !important;
+        line-height: 1.2rem !important;
+        background-color: #f8fafc;
+    }
+    .stSelectbox div[data-baseweb="select"] > div {
+        border: 1px solid #558699 !important;
+        border-radius: 6px !important;
+        height: 2.5rem !important;
+        padding: 0 0.75rem !important;
+        line-height: 1.2rem !important;
+        display: flex;
+        align-items: center;
+        background-color: #f8fafc;
+    }
 </style>
 """, unsafe_allow_html=True)
 
