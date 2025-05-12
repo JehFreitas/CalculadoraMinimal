@@ -261,17 +261,7 @@ if submit:
         ("Data:", str(data)),
         ("Cliente:", cliente),
         ("Orçamento:", orcamento),
-        ("Valor dos produtos:", f"{formatar(valor_produtos)}"),
-        ("Frete:", f"{formatar(frete_final)}"),
-        ("Multiplicador:", f"{multiplicador:.5f}"),
-        ("Difal embutido:", f"{formatar(difal_embutido)}"),
-        ("FCP embutido:", f"{formatar(fcp_embutido)}"),
-        ("Despesas acessórias:", f"{formatar(despesas_acessorias)}"),
-        ("Valor do IPI:", f"{formatar(valor_ipi)}"),
-        ("Valor da NF:", f"{formatar(valor_nfe)}"),
-        ("Guia Difal:", f"{formatar(guia_difal)}"),
-        ("Guia FCP:", f"{formatar(guia_fcp)}")
-    ]:
+     ]:
         linha -= 15
         c.setFont("Helvetica-Bold", 10)
         c.setFillColorRGB(0.333, 0.525, 0.6)
@@ -290,13 +280,22 @@ if submit:
     c.setFillColorRGB(0, 0, 0)
     c.drawString(40, linha, f"Produtos (60%): {formatar(valor_produtos)}")
     linha -= 15
-    c.drawString(40, linha, f"Montagem: {formatar(montagem_final)}")
+    c.drawString(40, linha, f"Frete: {formatar(frete_final)}")
     linha -= 15
-    c.drawString(40, linha, f"Valor total da NFSe: {formatar(valor_nfse)}")
+    c.drawString(40, linha, f"Difal embutido: {formatar(difal_embutido)}")
+    linha -= 15
+    c.drawString(40, linha, f"FCP embutido: {formatar(fcp_embutido)}")
+    linha -= 15
+    c.drawString(40, linha, f"Despesas acessórias: {formatar(despesas_acessorias)}")
+    linha -= 15
+    c.drawString(40, linha, f"Valor do IPI: {formatar(valor_ipi)}")
+    linha -= 15
+    c.drawString(40, linha, f"Frete: {formatar(frete_final)}")
+    linha -= 15
+    c.drawString(40, linha, f"Valor total da NFe: {formatar(valor_nfe)}")
     c.save()
     buffer.seek(0)
-
-
+     
     linha -= 25
     c.setFont("Helvetica-Bold", 10)
     c.setFillColorRGB(0.333, 0.525, 0.6)
@@ -311,7 +310,21 @@ if submit:
     c.drawString(40, linha, f"Valor total da NFSe: {formatar(valor_nfse)}")
     c.save()
     buffer.seek(0)
-    
+
+    linha -= 25
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColorRGB(0.333, 0.525, 0.6)
+    c.drawString(40, linha, "Guias")
+    linha -= 15
+    c.setFont("Helvetica", 10)
+    c.setFillColorRGB(0, 0, 0)
+    c.drawString(40, linha, f"Guia Difal: {formatar(guia_difal)}")
+    linha -= 15
+    c.drawString(40, linha, f"Guia FCP: {formatar(guia_fcp)}")
+    linha -= 15
+    c.save()
+    buffer.seek(0)
+
     # Nome do arquivo
     nome_cliente = cliente.strip().replace(" ", "_") or "Cliente"
     nome_orcamento = orcamento.strip().replace(" ", "_") or "Orcamento"
