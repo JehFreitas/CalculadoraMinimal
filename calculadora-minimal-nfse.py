@@ -271,13 +271,13 @@ if submit:
     ("Horario:", horario),
     ("Inscrição Estadual:", tem_ie),
     ]:
-    linha -= 15
-    c.setFont("Helvetica-Bold", 10)
-    c.setFillColorRGB(0.333, 0.525, 0.6)
-    c.drawString(40, linha, titulo)
-    c.setFont("Helvetica", 10)
-    c.setFillColorRGB(0, 0, 0)
-    c.drawString(160, linha, valor)
+        linha -= 15
+        c.setFont("Helvetica-Bold", 10)
+        c.setFillColorRGB(0.333, 0.525, 0.6)
+        c.drawString(40, linha, titulo)
+        c.setFont("Helvetica", 10)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawString(160, linha, valor)
     
     
     linha -= 25
@@ -299,10 +299,8 @@ if submit:
     linha -= 15
     c.drawString(40, linha, f"Valor do IPI: {formatar(valor_ipi)}")
     linha -= 15
-    c.drawString(40, linha, f"Frete: {formatar(frete_final)}")
-    linha -= 15
     c.drawString(40, linha, f"Valor total da NFe: {formatar(valor_nfe)}")
-    buffer.seek(0)
+    
      
     linha -= 25
     c.setFont("Helvetica-Bold", 10)
@@ -316,7 +314,7 @@ if submit:
     c.drawString(40, linha, f"Montagem: {formatar(montagem_final)}")
     linha -= 15
     c.drawString(40, linha, f"Valor total da NFSe: {formatar(valor_nfse)}")
-    buffer.seek(0)
+    
 
     linha -= 25
     c.setFont("Helvetica-Bold", 10)
