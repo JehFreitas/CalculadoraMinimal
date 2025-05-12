@@ -265,7 +265,13 @@ if submit:
         ("Data:", str(data)),
         ("Cliente:", cliente),
         ("Orçamento:", orcamento),
-     ]:
+        ("Estado:", estado),
+        ("Localização:", cidade),
+        ("Distância:", km_ida_volta),
+        ("Horario:", horario),
+        ("Inscrição Estadual:", tem_ie),
+   
+    ]:
         linha -= 15
         c.setFont("Helvetica-Bold", 10)
         c.setFillColorRGB(0.333, 0.525, 0.6)
