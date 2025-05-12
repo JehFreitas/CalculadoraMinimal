@@ -338,7 +338,7 @@ if submit:
     linha -= 15
     c.drawString(40, linha, f"Valor do IPI: {formatar(valor_ipi)}")
     linha -= 15
-    c.drawString(40, linha, f"Valor total da NFe: {formatar(valor_nfe)}")
+    c.drawString(40, linha, f"Valor total da NFe: {formatar(valor_nf)}")
 
         
     linha -= 25
