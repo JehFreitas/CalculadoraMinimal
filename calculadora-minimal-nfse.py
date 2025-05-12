@@ -33,9 +33,9 @@ st.markdown("""
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
 
-    /* ✅ AUMENTA A FONTE DAS PERGUNTAS (labels dos campos) */
-    label, .stRadio > label, .stSelectbox > label, .stNumberInput > label, .stTextInput > label {
-        font-size: 1.8rem !important;
+    /* ✅ Aumenta a fonte das perguntas (títulos dos widgets) */
+    .stRadio > div > label, .stSelectbox > div > label, .stNumberInput > div > label, .stTextInput > div > label, .stDateInput > div > label {
+        font-size: 1.2rem !important;
         font-weight: 700 !important;
         color: #000000 !important;
     }
@@ -79,6 +79,7 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 
