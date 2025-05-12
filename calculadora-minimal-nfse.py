@@ -137,7 +137,7 @@ with st.form("formulario"):
     km_ida_volta = 0
     if frete_opcao == "Informar valor negociado":
         frete_negociado = st.number_input("Valor negociado do frete", min_value=0.0, format="%.2f")
-    if montagem_opcao == "Valor negociado":
+    if montagem_opcao == "Informar valor negociado":
         montagem_negociada = st.number_input("Valor negociado da montagem", min_value=0.0, format="%.2f")
     if montagem_opcao == "Calcular" and estado != "São Paulo":
         km_ida_volta = st.number_input("Distância ida e volta (km) de Barueri-SP", min_value=0.0, format="%.2f")
@@ -153,25 +153,51 @@ if submit:
     DIFAL = Decimal(TABELA_DIFAL.get(estado, 0))
     FCP = Decimal(TABELA_FCP.get(estado, 0))
 
+    # 1. Cálculo do Frete (Salis)
     frete_base = Decimal(0)
     if frete_opcao == "Calcular":
         if estado == "São Paulo":
-            frete_base = valor_produtos_nfe * Decimal("0.03") if cidade == "Capital" and horario == "Comercial" else valor_produtos_nfe * Decimal("0.04")
+            if cidade == "Capital" and horario == "Comercial":
+                frete_base = Decimal(valor_produtos_nfe) * Decimal("0.03")
+            elif cidade == "Capital" and horario == "Fora do comercial":
+                frete_base = Decimal(valor_produtos_nfe) * Decimal("0.04")
+            elif cidade == "Interior":
+                frete_base = Decimal(valor_produtos_nfe) * Decimal("0.04")
         else:
-            percentual = TABELA_SALIS.get((estado, cidade), Decimal("0.0"))
-            base_frete = valor_produtos_nfe if valor_produtos_nfe > 30000 else Decimal("30000.00")
-            frete_base = base_frete * Decimal(percentual or 0)
+            if valor_produtos > 30000:
+                percentual = TABELA_SALIS.get((estado, cidade))
+                if percentual is not None:
+                    frete_base = Decimal(valor_produtos_nfe) * Decimal(percentual)
+                else:
+                    st.warning(f"Salis não atende {estado} - {cidade}.")
+                    frete_base = Decimal(0)
+            else:
+                percentual = TABELA_SALIS.get((estado, cidade))
+                if percentual is not None:
+                    frete_base = Decimal("30000.00") * Decimal(percentual)
+                else:
+                    st.warning(f"Salis não atende {estado} - {cidade}.")
+                    frete_base = Decimal(0)
     elif frete_opcao == "Informar valor negociado":
         frete_base = Decimal(frete_negociado)
+    elif frete_opcao == "Não contratar":
+        frete_base = Decimal(0)
 
+
+
+    # 2. Cálculo da Montagem
     montagem_base = Decimal(0)
     if montagem_opcao == "Calcular":
         if estado == "São Paulo" and cidade == "Capital":
-            montagem_base = valor_produtos_nfe * Decimal("0.035")
+            montagem_base = Decimal(valor_produtos_nfe) * Decimal("0.035")
         else:
-            montagem_base = valor_produtos_nfe * Decimal("0.035") + Decimal(km_ida_volta) * Decimal("3.50")
+            valor_base = Decimal(valor_produtos_nfe) * Decimal("0.035")
+            custo_km = Decimal(km_ida_volta) * Decimal("3.50")
+            montagem_base = valor_base + custo_km
     elif montagem_opcao == "Informar valor negociado":
         montagem_base = Decimal(montagem_negociada)
+    elif montagem_opcao == "Não contratar":
+        montagem_base = Decimal(0)
 
     BASE = Decimal("500000")
     ipi_frete = BASE * IPI / (1 + IPI)
