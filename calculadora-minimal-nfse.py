@@ -270,6 +270,7 @@ if submit:
     ("Distância:", str(km_ida_volta)),
     ("Horario:", horario),
     ("Inscrição Estadual:", tem_ie),
+    ("Valor dos Produtos:", str(valor_produtos)),
     ]:
         linha -= 15
         c.setFont("Helvetica-Bold", 10)
