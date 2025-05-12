@@ -31,23 +31,29 @@ h1, h2, h3, h4 {
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-/* Personalização dos botões de rádio (redondos e azuis) */
 [data-baseweb="radio"] > div {
     background-color: #ffffff;
-    border-radius: 50% !important;
+    border-radius: 50% !important; /* Torna o botão redondo */
     padding: 0.25rem 0.5rem;
-    margin-left: 10px;
+    display: inline-flex; /* Para os itens ficarem alinhados na horizontal */
+    align-items: center;
 }
 
 [data-baseweb="radio"] label span {
     color: #558699;
     font-weight: 500;
-    font-size: 1.1rem; /* Ajuste no tamanho da fonte */
+    font-size: 1.4rem; /* Ajuste do tamanho da fonte */
+    margin-left: 8px; /* Espaço entre o botão e a opção */
+}
+
+[data-baseweb="radio"] input {
+    margin-right: 10px; /* Ajusta o espaço do botão de seleção */
 }
 
 [data-baseweb="radio"] input:checked + div {
-    background-color: #558699 !important;
+    background-color: #558699 !important; /* Azul para os botões selecionados */
     color: #ffffff !important;
+
 } 
 
 /* Personalização da borda dos campos de entrada e selects */
