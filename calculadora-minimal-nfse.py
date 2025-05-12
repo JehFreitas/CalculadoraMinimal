@@ -170,7 +170,7 @@ if submit:
             montagem_base = valor_produtos_nfe * Decimal("0.035")
         else:
             montagem_base = valor_produtos_nfe * Decimal("0.035") + Decimal(km_ida_volta) * Decimal("3.50")
-    elif montagem_opcao == "Valor negociado":
+    elif montagem_opcao == "Informar valor negociado":
         montagem_base = Decimal(montagem_negociada)
 
     BASE = Decimal("500000")
