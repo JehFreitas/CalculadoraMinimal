@@ -30,20 +30,26 @@ h1, h2, h3, h4 {
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
-/* Personalização dos botões de rádio */
+
+/* Personalização dos botões de rádio (redondos e azuis) */
 [data-baseweb="radio"] > div {
     background-color: #ffffff;
-    border-radius: 6px;
+    border-radius: 50% !important;
     padding: 0.25rem 0.5rem;
+    margin-left: 10px;
 }
+
 [data-baseweb="radio"] label span {
     color: #558699;
     font-weight: 500;
+    font-size: 1.1rem; /* Ajuste no tamanho da fonte */
 }
+
 [data-baseweb="radio"] input:checked + div {
     background-color: #558699 !important;
     color: #ffffff !important;
 } 
+
 /* Personalização da borda dos campos de entrada e selects */
 .stNumberInput input[type="number"] {
     border: 1px solid #558699 !important;
@@ -65,6 +71,7 @@ h1, h2, h3, h4 {
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 st.title("Calculadora Comercial - Minimal Design (NFe + NFSe)")
