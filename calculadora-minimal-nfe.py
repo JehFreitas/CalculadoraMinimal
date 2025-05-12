@@ -268,12 +268,7 @@ if submit:
     valor_nf = Decimal(valor_produtos) + frete_final + valor_ipi + despesas_acessorias
 
     # Resultados finais
-    st.subheader("Valores Calculados")
-    st.write(f"Cotação do frete: {formatar(frete_base)}")
-    st.write(f"Cotação da montagem: {formatar(montagem_base)}")
-    st.write(f"Difal embutido: {formatar(difal_embutido)}")
-    st.write(f"FCP embutido: {formatar(fcp_embutido)}")
-
+    
     st.subheader("Resumo da Nota Fiscal")
     st.write(f"Valor dos produtos: {formatar(Decimal(valor_produtos))}")
     st.write(f"Valor do Frete: {formatar(frete_final)}")
