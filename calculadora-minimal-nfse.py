@@ -266,12 +266,7 @@ if submit:
 
     # SAÍDA VISUAL
 
-    st.subheader("Valores Calculados")
-    st.write(f"Cotação do frete: {formatar(frete_base)}")
-    st.write(f"Cotação da montagem: {formatar(montagem_base)}")
-    st.write(f"Difal embutido: {formatar(difal_embutido)}")
-    st.write(f"FCP embutido: {formatar(fcp_embutido)}")
-    
+      
     st.subheader("Resumo da Nota Fiscal de Produtos (NFe)")
     st.write(f"Produtos (60%): {formatar(valor_produtos_nfe)}")
     st.write(f"Valor do Frete: {formatar(frete_final)}")
