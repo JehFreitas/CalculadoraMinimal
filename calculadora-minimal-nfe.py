@@ -273,8 +273,8 @@ if submit:
     st.write(f"Valor dos produtos: {formatar(Decimal(valor_produtos))}")
     st.write(f"Valor do Frete: {formatar(frete_final)}")
     st.write(f"Valor da Montagem: {formatar(montagem_final)}")
-    st.write(f"difal_embutido: {formatar(difal_embutido)}")
-    st.write(f"fcp_embutido: {formatar(fcp_embutido)}")
+    st.write(f"Difal: {formatar(difal_embutido)}")
+    st.write(f"FCP: {formatar(fcp_embutido)}")
     st.write(f"Valor do IPI: {formatar(valor_ipi)}")
     st.write(f"Valor da NF: {formatar(valor_nf)}")
 
