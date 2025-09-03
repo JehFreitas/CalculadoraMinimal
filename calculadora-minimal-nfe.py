@@ -273,14 +273,12 @@ if submit:
     st.write(f"Valor dos produtos: {formatar(Decimal(valor_produtos))}")
     st.write(f"Valor do Frete: {formatar(frete_final)}")
     st.write(f"Valor da Montagem: {formatar(montagem_final)}")
-    st.write(f"Despesas acessórias: {formatar(despesas_acessorias)}")
+    st.write(f"difal_embutido: {formatar(difal_embutido)}")
+    st.write(f"fcp_embutido: {formatar(fcp_embutido)}")
     st.write(f"Valor do IPI: {formatar(valor_ipi)}")
     st.write(f"Valor da NF: {formatar(valor_nf)}")
 
-    st.subheader("Guias")
-    st.write(f"Guia Difal: {formatar(guia_difal)}")
-    st.write(f"Guia FCP: {formatar(guia_fcp)}")
-
+  
  # Geração de PDF
     import io
 
