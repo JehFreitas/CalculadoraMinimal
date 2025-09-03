@@ -271,7 +271,8 @@ if submit:
     st.write(f"Produtos (60%): {formatar(valor_produtos_nfe)}")
     st.write(f"Valor do Frete: {formatar(frete_final)}")
     st.write(f"IPI: {formatar(valor_ipi)}")
-    st.write(f"Despesas acessórias: {formatar(despesas_acessorias)}")
+    st.write(f"Difal: {formatar(difal_embutido)}")
+    st.write(f"FCP: {formatar(fcp_embutido)}")
     st.write(f"Valor total da NFe: {formatar(valor_nfe)}")
 
     st.subheader("Resumo da Nota Fiscal de Serviço (NFSe)")
@@ -279,10 +280,7 @@ if submit:
     st.write(f"Valor da Montagem: {formatar(montagem_final)}")
     st.write(f"Valor total da NFSe: {formatar(valor_nfse)}")
 
-    st.subheader("Guias")
-    st.write(f"Guia Difal: {formatar(guia_difal)}")
-    st.write(f"Guia FCP: {formatar(guia_fcp)}")
-
+  
 
      # Geração do PDF
     buffer = io.BytesIO()
