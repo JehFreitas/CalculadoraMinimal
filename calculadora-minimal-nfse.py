@@ -157,11 +157,11 @@ with st.form("formulario"):
     if montagem_opcao == "Informar valor negociado":
         montagem_negociada = st.number_input("Valor negociado da montagem", min_value=0.0, format="%.2f")
     if montagem_opcao == "Calcular" and not (estado == "São Paulo" and cidade == "Capital"):
-    km_ida_volta = st.number_input(
+        km_ida_volta = st.number_input(
         "Distância ida e volta (km) de Barueri-SP",
         min_value=0.0,
         format="%.2f"
-    )
+        )
     submit = st.form_submit_button("Calcular")
 
 if submit:
