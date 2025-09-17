@@ -161,19 +161,19 @@ if submit:
     # 1. Cálculo do Frete (Salis)
     frete_base = Decimal(0)
     if frete_opcao == "Calcular":
-        if estado == "São Paulo":
-            if cidade == "Capital" and horario == "Comercial":
-                frete_base = Decimal(valor_produtos) * Decimal("0.03")
-            elif cidade == "Capital" and horario == "Fora do comercial":
-                frete_base = Decimal(valor_produtos) * Decimal("0.04")
-            elif cidade == "Interior":
-                if valor_produtos > 30000:
-                    frete_base = Decimal(valor_produtos) * Decimal("0.04")
-                else:
-                    frete_base = Decimal("30000.00") * Decimal("0.04")
-     else:
+    if estado == "São Paulo":
+        if cidade == "Capital" and horario == "Comercial":
+            frete_base = Decimal(valor_produtos) * Decimal("0.03")
+        elif cidade == "Capital" and horario == "Fora do comercial":
+            frete_base = Decimal(valor_produtos) * Decimal("0.04")
+        elif cidade == "Interior":
             if valor_produtos > 30000:
-                percentual = TABELA_SALIS.get((estado, cidade))
+                frete_base = Decimal(valor_produtos) * Decimal("0.04")
+            else:
+                frete_base = Decimal("30000.00") * Decimal("0.04")
+    else:  # << esse else se refere ao if estado == "São Paulo"
+        if valor_produtos > 30000:
+            percentual = TABELA_SALIS.get((estado, cidade))
                 if percentual is not None:
                     frete_base = Decimal(valor_produtos) * Decimal(percentual)
                 else:
