@@ -182,7 +182,10 @@ if submit:
             elif cidade == "Capital" and horario == "Fora do comercial":
                 frete_base = Decimal(valor_produtos_nfe) * Decimal("0.04")
             elif cidade == "Interior":
-                frete_base = Decimal(valor_produtos_nfe) * Decimal("0.04")
+                if valor_produtos > 30000:
+                    frete_base = Decimal(valor_produtos_nfe) * Decimal("0.04")
+                else:
+                    frete_base = Decimal("30000.00") * Decimal("0.04")
         else:
             if valor_produtos > 30000:
                 percentual = TABELA_SALIS.get((estado, cidade))
