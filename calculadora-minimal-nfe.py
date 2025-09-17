@@ -163,9 +163,9 @@ if submit:
     if frete_opcao == "Calcular":
         if estado == "São Paulo":
             if cidade == "Capital" and horario == "Comercial":
-                frete_base = Decimal(valor_produtos_nfe) * Decimal("0.03")
+                frete_base = Decimal(valor_produtos) * Decimal("0.03")
             elif cidade == "Capital" and horario == "Fora do comercial":
-                frete_base = Decimal(valor_produtos_nfe) * Decimal("0.04")
+                frete_base = Decimal(valor_produtos) * Decimal("0.04")
             elif cidade == "Interior":
                 if valor_produtos > 30000:
                     frete_base = Decimal(valor_produtos) * Decimal("0.04")
