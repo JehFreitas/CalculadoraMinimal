@@ -158,9 +158,6 @@ if submit:
     # 3. Multiplicador de carga tributária
     # 4. Cálculo do DIFAL / FCP / IPI / Valor NF
 
-# 1. Cálculo do Frete (Salis)
-frete_base = Decimal(0)
-
     # 1. Cálculo do Frete (Salis)
     frete_base = Decimal(0)
     if frete_opcao == "Calcular":
