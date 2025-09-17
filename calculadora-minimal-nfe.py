@@ -158,38 +158,44 @@ if submit:
     # 3. Multiplicador de carga tributária
     # 4. Cálculo do DIFAL / FCP / IPI / Valor NF
 
-    # 1. Cálculo do Frete (Salis)
-    frete_base = Decimal(0)
-    if frete_opcao == "Calcular":
+# 1. Cálculo do Frete (Salis)
+frete_base = Decimal(0)
+
+if frete_opcao == "Calcular":
     if estado == "São Paulo":
         if cidade == "Capital" and horario == "Comercial":
             frete_base = Decimal(valor_produtos) * Decimal("0.03")
+
         elif cidade == "Capital" and horario == "Fora do comercial":
             frete_base = Decimal(valor_produtos) * Decimal("0.04")
+
         elif cidade == "Interior":
             if valor_produtos > 30000:
                 frete_base = Decimal(valor_produtos) * Decimal("0.04")
             else:
                 frete_base = Decimal("30000.00") * Decimal("0.04")
-    else:  # << esse else se refere ao if estado == "São Paulo"
+
+    else:  # estados diferentes de São Paulo
         if valor_produtos > 30000:
             percentual = TABELA_SALIS.get((estado, cidade))
-                if percentual is not None:
-                    frete_base = Decimal(valor_produtos) * Decimal(percentual)
-                else:
-                    st.warning(f"Salis não atende {estado} - {cidade}.")
-                    frete_base = Decimal(0)
+            if percentual is not None:
+                frete_base = Decimal(valor_produtos) * Decimal(percentual)
             else:
-                percentual = TABELA_SALIS.get((estado, cidade))
-                if percentual is not None:
-                    frete_base = Decimal("30000.00") * Decimal(percentual)
-                else:
-                    st.warning(f"Salis não atende {estado} - {cidade}.")
-                    frete_base = Decimal(0)
-    elif frete_opcao == "Informar valor negociado":
-        frete_base = Decimal(frete_negociado)
-    elif frete_opcao == "Não contratar":
-        frete_base = Decimal(0)
+                st.warning(f"Salis não atende {estado} - {cidade}.")
+                frete_base = Decimal(0)
+        else:
+            percentual = TABELA_SALIS.get((estado, cidade))
+            if percentual is not None:
+                frete_base = Decimal("30000.00") * Decimal(percentual)
+            else:
+                st.warning(f"Salis não atende {estado} - {cidade}.")
+                frete_base = Decimal(0)
+
+elif frete_opcao == "Informar valor negociado":
+    frete_base = Decimal(frete_negociado)
+
+elif frete_opcao == "Não contratar":
+    frete_base = Decimal(0)
 
 
 
