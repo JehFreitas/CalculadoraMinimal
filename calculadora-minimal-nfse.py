@@ -385,4 +385,111 @@ if submit:
         file_name=file_name,
         mime="application/pdf"
     )
+     # Geração do PDF
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # Cabeçalho
+    linha = height - 50
+    c.drawImage("logo_minimal.png", 40, 805, width=70, preserveAspectRatio=True, mask='auto')
+    c.setFont("Helvetica-Bold", 14)
+    c.setFillColorRGB(0.333, 0.525, 0.6)
+    c.drawString(150, 830, "Calculadora Comercial - Minimal Design")
+    c.setFillColorRGB(0, 0, 0)
+    c.setFont("Helvetica", 10)
+    
+    linha = 800
+    for titulo, valor in [
+    ("Data:", str(data)),
+    ("Cliente:", cliente),
+    ("Orçamento:", orcamento),
+    ("Estado:", estado),
+    ("Localização:", cidade),
+    ("Distância:", str(km_ida_volta)),
+    ("Horario:", horario),
+    ("Inscrição Estadual:", tem_ie),
+    ("Valor dos Produtos:", formatar(valor_produtos)),
+    ]:
+        linha -= 15
+        c.setFont("Helvetica-Bold", 10)
+        c.setFillColorRGB(0.333, 0.525, 0.6)
+        c.drawString(40, linha, titulo)
+        c.setFont("Helvetica", 10)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawString(160, linha, valor)
+    
+    
+    linha -= 25
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColorRGB(0.333, 0.525, 0.6)
+    c.drawString(40, linha, "Resumo da Nota Fiscal (NFe)")
+    linha -= 15
+    c.setFont("Helvetica", 10)
+    c.setFillColorRGB(0, 0, 0)
+    c.drawString(40, linha, f"Produtos (60%): {formatar(valor_produtos_nfe)}")
+    linha -= 15
+    c.drawString(40, linha, f"Frete: {formatar(frete_final)}")
+    linha -= 15
+    c.drawString(40, linha, f"Frete sem impostos: {formatar(frete_base)}")
+    linha -= 15
+    c.drawString(40, linha, f"Difal embutido: {formatar(difal_embutido)}")
+    linha -= 15
+    c.drawString(40, linha, f"FCP embutido: {formatar(fcp_embutido)}")
+    linha -= 15
+    c.drawString(40, linha, f"Despesas acessórias: {formatar(despesas_acessorias)}")
+    linha -= 15
+    c.drawString(40, linha, f"Valor do IPI: {formatar(valor_ipi)}")
+    linha -= 15
+    c.drawString(40, linha, f"Valor total da NFe: {formatar(valor_nfe)}")
+    
+     
+    linha -= 25
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColorRGB(0.333, 0.525, 0.6)
+    c.drawString(40, linha, "Resumo da Nota Fiscal de Serviço (NFSe)")
+    linha -= 15
+    c.setFont("Helvetica", 10)
+    c.setFillColorRGB(0, 0, 0)
+    c.drawString(40, linha, f"Produtos (40%): {formatar(valor_produtos_nfse)}")
+    linha -= 15
+    c.drawString(40, linha, f"Montagem: {formatar(montagem_final)}")
+    linha -= 15
+    c.drawString(40, linha, f"Montagem sem impostos: {formatar(montagem_base)}")
+    linha -= 15
+    c.drawString(40, linha, f"Montagem Base: {formatar(valor_base)}")
+    linha -= 15
+    c.drawString(40, linha, f"Custo com deslocamento: {formatar(custo_km)}")
+    linha -= 15
+    c.drawString(40, linha, f"Valor total da NFSe: {formatar(valor_nfse)}")
+    
+
+    linha -= 25
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColorRGB(0.333, 0.525, 0.6)
+    c.drawString(40, linha, "Guias")
+    linha -= 15
+    c.setFont("Helvetica", 10)
+    c.setFillColorRGB(0, 0, 0)
+    c.drawString(40, linha, f"Guia Difal: {formatar(guia_difal)}")
+    linha -= 15
+    c.drawString(40, linha, f"Guia FCP: {formatar(guia_fcp)}")
+    linha -= 15
+    c.save()
+    buffer.seek(0)
+
+    # Nome do arquivo
+    nome_cliente = cliente.strip().replace(" ", "_") or "Cliente"
+    nome_orcamento = orcamento.strip().replace(" ", "_") or "Orcamento"
+    file_name = f"Simulacao_{nome_cliente}_{nome_orcamento}.pdf"
+    
+    # Botão de download
+    st.download_button(
+        label="📄 Baixar PDF do ADM Comercial",
+        data=buffer,
+        file_name=file_name,
+        mime="application/pdf"
+    )
+
+    
 
