@@ -340,9 +340,7 @@ if submit:
     linha -= 15
     c.drawString(40, linha, f"Valor total da NFe: {formatar(valor_nf)}")
     linha -= 15
-    c.drawString(40, linha, f"Frete Base: {formatar(frete_base)}")
-    linha -= 15
-    c.drawString(40, linha, f"Montagem Base: {formatar(montagem_base)}")
+    
         
     linha -= 25
     c.setFont("Helvetica-Bold", 10)
@@ -415,6 +413,15 @@ if submit:
     linha -= 15
     c.drawString(40, linha, f"Montagem: {formatar(montagem_final)}")
     linha -= 15
+ 
+    c.drawString(40, linha, f"Frete Base: {formatar(frete_base)}")
+    linha -= 15
+    c.drawString(40, linha, f"Montagem Base: {formatar(montagem_base)}")
+    linha -= 15
+    c.drawString(40, linha, f"Montagem Base: {formatar(valor_base)}")
+    linha -= 15
+    c.drawString(40, linha, f"Montagem Base: {formatar(custo_km)}")
+    linha -= 15
     c.drawString(40, linha, f"Difal embutido: {formatar(difal_embutido)}")
     linha -= 15
     c.drawString(40, linha, f"FCP embutido: {formatar(fcp_embutido)}")
@@ -424,10 +431,7 @@ if submit:
     c.drawString(40, linha, f"Valor do IPI: {formatar(valor_ipi)}")
     linha -= 15
     c.drawString(40, linha, f"Valor total da NFe: {formatar(valor_nf)}")
-    linha -= 15
-    c.drawString(40, linha, f"Frete Base: {formatar(frete_base)}")
-    linha -= 15
-    c.drawString(40, linha, f"Montagem Base: {formatar(montagem_base)}")
+    
         
     linha -= 25
     c.setFont("Helvetica-Bold", 10)
