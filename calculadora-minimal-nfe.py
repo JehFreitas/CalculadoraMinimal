@@ -414,13 +414,13 @@ if submit:
     c.drawString(40, linha, f"Montagem: {formatar(montagem_final)}")
     linha -= 15
  
-    c.drawString(40, linha, f"Frete Base: {formatar(frete_base)}")
+    c.drawString(40, linha, f"Frete sem impostos: {formatar(frete_base)}")
     linha -= 15
-    c.drawString(40, linha, f"Montagem Base: {formatar(montagem_base)}")
+    c.drawString(40, linha, f"Montagem sem impostos: {formatar(montagem_base)}")
     linha -= 15
     c.drawString(40, linha, f"Montagem Base: {formatar(valor_base)}")
     linha -= 15
-    c.drawString(40, linha, f"Montagem Base: {formatar(custo_km)}")
+    c.drawString(40, linha, f"Custo com deslocamento: {formatar(custo_km)}")
     linha -= 15
     c.drawString(40, linha, f"Difal embutido: {formatar(difal_embutido)}")
     linha -= 15
