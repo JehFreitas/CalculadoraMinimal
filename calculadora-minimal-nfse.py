@@ -6,6 +6,7 @@ from datetime import date
 import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.pdfencrypt import StandardEncryption
 
 getcontext().prec = 10
 
@@ -386,9 +387,27 @@ if submit:
         mime="application/pdf"
     )
      # Geração do PDF
+   import io
+
     buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+
+    # Senha fixa para abrir o PDF
+    senha_pdf = "AdmMinimal26"
+
+    encrypt = StandardEncryption(
+    userPassword=senha_pdf,   # senha para abrir
+    ownerPassword=senha_pdf,  # senha do proprietário
+    canPrint=1,               # permite imprimir
+    canModify=0,              # bloqueia edição
+    canCopy=0,                # bloqueia copiar texto
+    canAnnotate=0             # bloqueia comentários
+    )
+
+    c = canvas.Canvas(
+    buffer,
+    pagesize=A4,
+    encrypt=encrypt
+    )
     
     # Cabeçalho
     linha = height - 50
