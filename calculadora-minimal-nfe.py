@@ -376,7 +376,7 @@ if submit:
     buffer = io.BytesIO()
 
     # Senha fixa para abrir o PDF
-    senha_pdf = "Minimal2025"
+    senha_pdf = "AdmMinimal26"
 
     encrypt = StandardEncryption(
     userPassword=senha_pdf,   # senha para abrir
