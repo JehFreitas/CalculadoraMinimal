@@ -387,7 +387,7 @@ if submit:
         mime="application/pdf"
     )
      # Geração do PDF
-   import io
+    import io
 
     buffer = io.BytesIO()
 
