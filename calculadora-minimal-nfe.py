@@ -374,23 +374,23 @@ if submit:
 
     buffer = io.BytesIO()
 
-# Senha fixa para abrir o PDF
-senha_pdf = "Minimal2025"
+    # Senha fixa para abrir o PDF
+    senha_pdf = "Minimal2025"
 
-encrypt = StandardEncryption(
+    encrypt = StandardEncryption(
     userPassword=senha_pdf,   # senha para abrir
     ownerPassword=senha_pdf,  # senha do proprietário
     canPrint=1,               # permite imprimir
     canModify=0,              # bloqueia edição
     canCopy=0,                # bloqueia copiar texto
     canAnnotate=0             # bloqueia comentários
-)
+    )
 
-c = canvas.Canvas(
+    c = canvas.Canvas(
     buffer,
     pagesize=A4,
     encrypt=encrypt
-)
+    )
     # Inserir logo e título estilizado
     c.drawImage("logo_minimal.png", 40, 805, width=70, preserveAspectRatio=True, mask='auto')
     c.setFont("Helvetica-Bold", 14)
