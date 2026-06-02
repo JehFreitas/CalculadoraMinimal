@@ -118,7 +118,7 @@ TABELA_SALIS = {
 }
 TABELA_DIFAL = {
     'Acre': 0.12, 'Alagoas': 0.12, 'Amazonas': 0.13, 'Amapá': 0.13, 'Bahia': 0.135, 'Ceará': 0.13,
-    'DF - Difal 5%': 0.05, 'DF - Difal 13%': 0.13, 'Espírito Santo': 0.10, 'Goiás': 0.12, 'Maranhão': 0.15,
+    'DF': 0.13, 'Espírito Santo': 0.10, 'Goiás': 0.12, 'Maranhão': 0.15,
     'Minas Gerais': 0.06, 'Mato Grosso do Sul': 0.10, 'Mato Grosso': 0.10, 'Paraná': 0.075, 'Pará': 0.12,
     'Paraíba': 0.13, 'Pernambuco': 0.135, 'Piauí': 0.14, 'Rio De Janeiro': 0.08, 'Rio Grande Do Norte': 0.13,
     'Rio Grande Do Sul': 0.05, 'Rondônia': 0.125, 'Roraima': 0.13, 'Santa Catarina': 0.05, 'Sergipe': 0.12,
@@ -127,7 +127,7 @@ TABELA_DIFAL = {
 TABELA_FCP = {'Alagoas': 0.01, 'Rio De Janeiro': 0.02, 'Sergipe': 0.01}
 TABELA_ICMS = {
     'Acre': 0.07, 'Alagoas': 0.07, 'Amazonas': 0.07, 'Amapá': 0.07, 'Bahia': 0.07, 'Ceará': 0.07,
-    'DF - Difal 5%': 0.07, 'DF - Difal 13%': 0.07, 'Espírito Santo': 0.07, 'Goiás': 0.07, 'Maranhão': 0.07,
+    'DF': 0.07, 'Espírito Santo': 0.07, 'Goiás': 0.07, 'Maranhão': 0.07,
     'Minas Gerais': 0.12, 'Mato Grosso do Sul': 0.07, 'Mato Grosso': 0.07, 'Paraná': 0.12, 'Pará': 0.07,
     'Paraíba': 0.07, 'Pernambuco': 0.07, 'Piauí': 0.07, 'Rio De Janeiro': 0.12, 'Rio Grande Do Norte': 0.07,
     'Rio Grande Do Sul': 0.12, 'Rondônia': 0.07, 'Roraima': 0.07, 'Santa Catarina': 0.12, 'Sergipe': 0.07,
