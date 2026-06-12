@@ -95,7 +95,7 @@ TABELA_SALIS = {
     ("Amazonas", "Capital"): 0.27, ("Amazonas", "Interior"): 0.28,
     ("Bahia", "Capital"): 0.10, ("Bahia", "Interior"): 0.11,
     ("Ceará", "Capital"): 0.14, ("Ceará", "Interior"): 0.15,
-    ("DF - Difal 5%", "Capital"): 0.09, ("DF - Difal 13%", "Capital"): 0.09,
+    ("DF", "Capital"): 0.09,
     ("Espírito Santo", "Capital"): 0.08, ("Espírito Santo", "Interior"): 0.09,
     ("Goiás", "Capital"): 0.09, ("Goiás", "Interior"): 0.10,
     ("Maranhão", "Capital"): 0.15, ("Maranhão", "Interior"): 0.16,
