@@ -1,4 +1,4 @@
- # calculadora-minimal-nfe.py
+# calculadora-minimal-nfe.py
 
 import io
 from reportlab.lib.pagesizes import A4
@@ -196,6 +196,8 @@ if submit:
 
     # 2. Cálculo da Montagem
     montagem_base = Decimal(0)
+    valor_base = Decimal(0)
+    custo_km = Decimal(0)
     if montagem_opcao == "Calcular":
         if estado == "São Paulo" and cidade == "Capital":
             montagem_base = Decimal(valor_produtos) * Decimal("0.035")
@@ -477,5 +479,4 @@ if submit:
         file_name=file_name,
         mime="application/pdf"
     )
-
    
