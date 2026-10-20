@@ -1,0 +1,223 @@
+{
+  "_leia_me": "Parâmetros da Calculadora Comercial Minimal (regras de 2026, lucro real). Percentuais em %, ex.: 9.25 = 9,25%. null = Salis não atende. Edite pela tela 'Parâmetros (Adm)' da calculadora: ela grava este arquivo no GitHub.",
+  "impostos": {
+    "ipi": 3.25,
+    "pis_cofins": 9.25,
+    "credito_pis_cofins_frete": true,
+    "credito_pis_cofins_montagem": true,
+    "pis_cofins_sobre_difal_embutido": true,
+    "icms_sobre_ipi_e_difal_sem_ie": true,
+    "icms_sobre_ipi_ie_uso_consumo": false
+  },
+  "resultado": {
+    "empresa_tem_lucro": false,
+    "irpj": 15,
+    "aplicar_adicional_ir": false,
+    "adicional_ir": 10,
+    "csll": 9,
+    "margem_frete_montagem": 0
+  },
+  "frete": {
+    "pedido_minimo": 30000,
+    "sp_capital_comercial": 3,
+    "sp_capital_fora_horario": 4,
+    "sp_interior": 4,
+    "sp_capital_sem_cobranca": true,
+    "base_terceiros": "valor_produtos"
+  },
+  "montagem": {
+    "percentual": 3.5,
+    "valor_km": 3.5
+  },
+  "estados": {
+    "Acre": {
+      "icms_interestadual": 7,
+      "difal": 12,
+      "fcp": 0,
+      "salis_capital": 22,
+      "salis_interior": 23
+    },
+    "Alagoas": {
+      "icms_interestadual": 7,
+      "difal": 12,
+      "fcp": 1,
+      "salis_capital": 12,
+      "salis_interior": 12
+    },
+    "Amazonas": {
+      "icms_interestadual": 7,
+      "difal": 13,
+      "fcp": 0,
+      "salis_capital": 27,
+      "salis_interior": 28
+    },
+    "Amapá": {
+      "icms_interestadual": 7,
+      "difal": 13,
+      "fcp": 0,
+      "salis_capital": 27,
+      "salis_interior": 28
+    },
+    "Bahia": {
+      "icms_interestadual": 7,
+      "difal": 13.5,
+      "fcp": 0,
+      "salis_capital": 10,
+      "salis_interior": 11
+    },
+    "Ceará": {
+      "icms_interestadual": 7,
+      "difal": 13,
+      "fcp": 0,
+      "salis_capital": 14,
+      "salis_interior": 15
+    },
+    "DF": {
+      "icms_interestadual": 7,
+      "difal": 13,
+      "fcp": 0,
+      "salis_capital": 9,
+      "salis_interior": null
+    },
+    "Espírito Santo": {
+      "icms_interestadual": 7,
+      "difal": 10,
+      "fcp": 0,
+      "salis_capital": 8,
+      "salis_interior": 9
+    },
+    "Goiás": {
+      "icms_interestadual": 7,
+      "difal": 12,
+      "fcp": 0,
+      "salis_capital": 9,
+      "salis_interior": 10
+    },
+    "Maranhão": {
+      "icms_interestadual": 7,
+      "difal": 15,
+      "fcp": 0,
+      "salis_capital": 15,
+      "salis_interior": 16
+    },
+    "Minas Gerais": {
+      "icms_interestadual": 12,
+      "difal": 6,
+      "fcp": 0,
+      "salis_capital": 6,
+      "salis_interior": 7
+    },
+    "Mato Grosso do Sul": {
+      "icms_interestadual": 7,
+      "difal": 10,
+      "fcp": 0,
+      "salis_capital": 10,
+      "salis_interior": 11
+    },
+    "Mato Grosso": {
+      "icms_interestadual": 7,
+      "difal": 10,
+      "fcp": 0,
+      "salis_capital": 12,
+      "salis_interior": 13
+    },
+    "Paraná": {
+      "icms_interestadual": 12,
+      "difal": 7.5,
+      "fcp": 0,
+      "salis_capital": 6,
+      "salis_interior": 7
+    },
+    "Pará": {
+      "icms_interestadual": 7,
+      "difal": 12,
+      "fcp": 0,
+      "salis_capital": 15,
+      "salis_interior": 16
+    },
+    "Paraíba": {
+      "icms_interestadual": 7,
+      "difal": 13,
+      "fcp": 0,
+      "salis_capital": 13,
+      "salis_interior": 14
+    },
+    "Pernambuco": {
+      "icms_interestadual": 7,
+      "difal": 13.5,
+      "fcp": 0,
+      "salis_capital": 12,
+      "salis_interior": 13
+    },
+    "Piauí": {
+      "icms_interestadual": 7,
+      "difal": 14,
+      "fcp": 0,
+      "salis_capital": 14,
+      "salis_interior": 15
+    },
+    "Rio De Janeiro": {
+      "icms_interestadual": 12,
+      "difal": 8,
+      "fcp": 2,
+      "salis_capital": 5,
+      "salis_interior": 6
+    },
+    "Rio Grande Do Norte": {
+      "icms_interestadual": 7,
+      "difal": 13,
+      "fcp": 0,
+      "salis_capital": 14,
+      "salis_interior": 15
+    },
+    "Rio Grande Do Sul": {
+      "icms_interestadual": 12,
+      "difal": 5,
+      "fcp": 0,
+      "salis_capital": 8,
+      "salis_interior": 9
+    },
+    "Rondônia": {
+      "icms_interestadual": 7,
+      "difal": 12.5,
+      "fcp": 0,
+      "salis_capital": 22,
+      "salis_interior": 23
+    },
+    "Roraima": {
+      "icms_interestadual": 7,
+      "difal": 13,
+      "fcp": 0,
+      "salis_capital": null,
+      "salis_interior": null
+    },
+    "Santa Catarina": {
+      "icms_interestadual": 12,
+      "difal": 5,
+      "fcp": 0,
+      "salis_capital": 7,
+      "salis_interior": 8
+    },
+    "Sergipe": {
+      "icms_interestadual": 7,
+      "difal": 12,
+      "fcp": 1,
+      "salis_capital": 11,
+      "salis_interior": 12
+    },
+    "Tocantins": {
+      "icms_interestadual": 7,
+      "difal": 13,
+      "fcp": 0,
+      "salis_capital": 12,
+      "salis_interior": 13
+    },
+    "São Paulo": {
+      "icms_interestadual": 18,
+      "difal": 0,
+      "fcp": 0,
+      "salis_capital": null,
+      "salis_interior": null
+    }
+  }
+}
