@@ -60,6 +60,11 @@ def formatar(valor):
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def md(texto):
+    """Escapa o "$" de "R$" para o Streamlit não tratar o trecho como fórmula."""
+    return texto.replace("$", "\\$")
+
+
 def fmt_pct(fracao):
     return f"{fracao * 100:.2f}%".replace(".", ",")
 
@@ -263,22 +268,22 @@ if "sim" in st.session_state:
             ("Valor da NF", r["total_nf"]),
         ]
     for titulo, valor in linhas_nf:
-        st.write(f"{titulo}: {formatar(valor)}")
+        st.write(md(f"{titulo}: {formatar(valor)}"))
     if sem_ie:
-        st.write(f"Guia DIFAL: {formatar(r['difal'])} · Guia FCP: {formatar(r['fcp'])}")
+        st.write(md(f"Guia DIFAL: {formatar(r['difal'])} · Guia FCP: {formatar(r['fcp'])}"))
 
     if r["comissao_pct"]:
-        st.write(f"Comissão sobre os produtos: {formatar(r['comissao_correta'])}")
+        st.write(md(f"Comissão sobre os produtos: {formatar(r['comissao_correta'])}"))
         if diluido:
-            st.warning(
+            st.warning(md(
                 f"Acréscimo diluído: o sistema calculará a comissão sobre {formatar(r['valor_itens_nf'])} "
-                f"({formatar(r['comissao_sistema'])}). Diferença a ajustar: {formatar(r['comissao_diferenca'])}.")
+                f"({formatar(r['comissao_sistema'])}). Diferença a ajustar: {formatar(r['comissao_diferenca'])}."))
 
     if r["sp_capital_absorvido"]:
-        st.info(f"SP Capital: frete e montagem não são cobrados do cliente. "
-                f"Custo absorvido pela empresa: {formatar(-r['resultado_estimado'])}.")
+        st.info(md(f"SP Capital: frete e montagem não são cobrados do cliente. "
+                   f"Custo absorvido pela empresa: {formatar(-r['resultado_estimado'])}."))
     elif r["resultado_estimado"] < -1:
-        st.error(f"Atenção: frete e montagem geram resultado negativo de {formatar(r['resultado_estimado'])}.")
+        st.error(md(f"Atenção: frete e montagem geram resultado negativo de {formatar(r['resultado_estimado'])}."))
 
     if not sim["registro_ok"]:
         st.caption(f"⚠️ {sim['registro_msg']} Baixe a linha e cole na planilha:")
