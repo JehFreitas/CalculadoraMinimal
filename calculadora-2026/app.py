@@ -403,8 +403,6 @@ if "sim" in ss:
         for titulo, valor in linhas_nf:
             st.write(md(f"{titulo}: **{formatar(valor)}**" if titulo == "Valor total da NF"
                         else f"{titulo}: {formatar(valor)}"))
-        if sem_ie:
-            st.write(md(f"Guia DIFAL: {formatar(r['difal'])} · Guia FCP: {formatar(r['fcp'])}"))
 
         if r["comissao_pct"]:
             st.write(md(f"Comissão sobre os produtos: {formatar(r['comissao_correta'])}"))
@@ -469,9 +467,9 @@ if "sim" in ss:
                 c.drawString(40, y, f"{t.strip()}: {formatar(v)}")
 
         bloco("Resumo da Nota Fiscal (NFe)", linhas_nf)
-        if sem_ie:
-            bloco("Guias", [("Guia DIFAL", r["difal"]), ("Guia FCP", r["fcp"])])
         if admin:
+            if sem_ie:
+                bloco("Guias", [("Guia DIFAL", r["difal"]), ("Guia FCP", r["fcp"])])
             bloco("Custos e conferência", [
                 ("A pagar à transportadora", r["frete_custo"]),
                 ("A pagar à montadora", r["montagem_custo"]),
