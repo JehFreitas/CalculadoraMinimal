@@ -262,8 +262,10 @@ with st.container(border=True):
         if ss.get("frete_opcao") == "Calcular" and sp_capital:
             st.radio("Horário da entrega *", ["Comercial", "Fora do comercial"], index=None,
                      key="horario", horizontal=True)
-        if ss.get("frete_opcao") in OPCOES[:2] and not sem_cobranca:
-            st.radio("Frete aplicado: *", [PEDIDO, ITENS], index=None, key="frete_aplicacao")
+        if ss.get("frete_opcao") != "Não contratar" and not sem_cobranca:
+            st.radio("Frete aplicado: *", [PEDIDO, ITENS], index=None, key="frete_aplicacao",
+                     help="Ao pedido: campo de frete da NF. "
+                          "Aos itens: somado ao valor dos produtos. Use a mesma escolha do pedido no ERP.")
     with c2:
         st.radio("Montagem *", OPCOES, index=None, key="montagem_opcao")
         if ss.get("montagem_opcao") == "Informar valor negociado":
@@ -272,11 +274,15 @@ with st.container(border=True):
         if ss.get("montagem_opcao") == "Calcular" and estado and cidade and not sp_capital:
             st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0,
                             value=None, format="%.0f", key="km_ida_volta")
-        if ss.get("montagem_opcao") in OPCOES[:2] and not sem_cobranca:
-            st.radio("Montagem aplicada: *", [PEDIDO, ITENS], index=None, key="montagem_aplicacao")
+        if ss.get("montagem_opcao") != "Não contratar" and not sem_cobranca:
+            st.radio("Montagem aplicada: *", [PEDIDO, ITENS], index=None, key="montagem_aplicacao",
+                     help="Ao pedido: despesas acessórias da NF. "
+                          "Aos itens: somado ao valor dos produtos. Use a mesma escolha do pedido no ERP.")
 
     if ss.get("contribuinte") == NAO_CONTRIBUINTE:
         st.caption("DIFAL/FCP: sempre aplicado aos itens.")
+    elif ss.get("finalidade") == CONSUMIDOR_FINAL:
+        st.caption("ICMS sobre o IPI (consumidor final), quando aplicável: sempre aos itens.")
     if sem_cobranca:
         st.caption("SP Capital: frete e montagem não são cobrados do cliente.")
 
