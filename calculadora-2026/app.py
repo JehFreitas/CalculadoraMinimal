@@ -259,10 +259,6 @@ with st.container(border=True):
         if ss.get("frete_opcao") == "Informar valor negociado":
             st.number_input("Valor negociado do frete *", min_value=0.0, value=None,
                             format="%.2f", key="frete_negociado")
-        if ss.get("frete_opcao") == "Calcular" and sp_capital:
-            st.radio("Horário da entrega *", ["Comercial", "Fora do comercial"], index=None,
-                     key="horario", horizontal=True,
-                     help="SP Capital: a Salis cobra 3% no horário comercial e 4% fora dele.")
         if ss.get("frete_opcao") != "Não contratar" and not sem_cobranca:
             st.radio("Frete aplicado: *", [PEDIDO, ITENS], index=None, key="frete_aplicacao",
                      help="Ao pedido: campo de frete da NF. "
@@ -318,8 +314,6 @@ def faltando():
                 f.append(f"Valor negociado da {rot.lower()}" if serv == "montagem" else "Valor negociado do frete")
         if op != "Não contratar" and not sem_cobranca and not ss.get(f"{serv}_aplicacao"):
             f.append(f"{rot}: aplicado ao pedido ou aos itens")
-    if ss.get("frete_opcao") == "Calcular" and sp_capital and not ss.get("horario"):
-        f.append("Horário da entrega")
     if ss.get("montagem_opcao") == "Calcular" and not sp_capital and not ss.get("km_ida_volta"):
         f.append("Distância ida e volta (km)")
     return f
@@ -329,7 +323,7 @@ def entradas_atuais():
     contrib = ss.get("contribuinte")
     return dict(
         valor_produtos=ss.get("valor_produtos") or 0, estado=ss.get("estado"), cidade=ss.get("cidade"),
-        horario=ss.get("horario") if (sp_capital and ss.get("frete_opcao") == "Calcular") else None,
+        horario=None,  # SP Capital: custo estimado no horário comercial (frete não é cobrado do cliente)
         contribuinte=contrib,
         finalidade=ss.get("finalidade") if contrib == CONTRIBUINTE else None,
         frete_opcao=ss.get("frete_opcao"), montagem_opcao=ss.get("montagem_opcao"),
