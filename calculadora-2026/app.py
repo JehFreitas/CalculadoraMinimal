@@ -394,31 +394,29 @@ if "sim" in ss:
         linhas_nf.append(("Montagem em despesas acessórias (vOutro)", r["despesas_acessorias_nf"]))
     linhas_nf += [("Valor do IPI", r["ipi"]), ("Valor total da NF", r["total_nf"])]
 
+    # O que o vendedor precisa para lançar o pedido (o restante fica no PDF do Adm)
+    despesas = r["montagem_final"] + r["difal_fcp_embutido"]
+    linhas_vendedor = [("Frete", r["frete_final"]), ("Despesas acessórias", despesas),
+                       ("Valor do IPI", r["ipi"]), ("Valor total da NF", r["total_nf"])]
+    onde = []
+    if r["frete_final"]:
+        onde.append(f"Frete: {'aos itens' if e['frete_aplicacao'] == ITENS else 'ao pedido'}")
+    if r["montagem_final"]:
+        onde.append(f"Montagem: {'aos itens' if e['montagem_aplicacao'] == ITENS else 'ao pedido'}")
+    if r["difal_fcp_embutido"]:
+        onde.append(("DIFAL/FCP" if sem_ie else "ICMS sobre IPI") + ": aos itens")
+
     with st.container(border=True):
         st.subheader("Resumo da Nota Fiscal")
         if desatualizado:
             st.warning("Os dados do formulário mudaram depois deste cálculo. Clique em **Calcular** de novo.")
         if r["aviso"]:
             st.warning(r["aviso"])
-        for titulo, valor in linhas_nf:
+        for titulo, valor in linhas_vendedor:
             st.write(md(f"{titulo}: **{formatar(valor)}**" if titulo == "Valor total da NF"
                         else f"{titulo}: {formatar(valor)}"))
-        if sem_ie:
-            st.write(md(f"Guia DIFAL: {formatar(r['difal'])} · Guia FCP: {formatar(r['fcp'])}"))
-
-        if r["comissao_pct"]:
-            st.write(md(f"Comissão sobre os produtos: {formatar(r['comissao_correta'])}"))
-            if r["comissao_diferenca"] > 0.005:
-                st.warning(md(
-                    f"O sistema calculará a comissão sobre {formatar(r['valor_itens_nf'])} "
-                    f"({formatar(r['comissao_sistema'])}). Diferença a ajustar: "
-                    f"{formatar(r['comissao_diferenca'])}."))
-        if r["sp_capital_absorvido"]:
-            st.info(md(f"SP Capital: frete e montagem não são cobrados do cliente. "
-                       f"Custo absorvido pela empresa: {formatar(-r['resultado_estimado'])}."))
-        elif r["resultado_estimado"] < -1:
-            st.error(md(f"Atenção: frete e montagem geram resultado negativo de "
-                        f"{formatar(r['resultado_estimado'])}."))
+        if onde:
+            st.caption(" · ".join(onde))
 
     # ---------------- PDFs ----------------
     def gerar_pdf(admin=False):
@@ -468,10 +466,17 @@ if "sim" in ss:
                 y -= 14
                 c.drawString(40, y, f"{t.strip()}: {formatar(v)}")
 
-        bloco("Resumo da Nota Fiscal (NFe)", linhas_nf)
-        if sem_ie:
-            bloco("Guias", [("Guia DIFAL", r["difal"]), ("Guia FCP", r["fcp"])])
+        if not admin:
+            bloco("Valores para o pedido", linhas_vendedor)
+            if onde:
+                y -= 14
+                c.setFont("Helvetica", 9)
+                c.drawString(40, y, " · ".join(onde))
         if admin:
+            bloco("Valores para o pedido", linhas_vendedor)
+            bloco("Composição da Nota Fiscal (NFe)", linhas_nf)
+            if sem_ie:
+                bloco("Guias", [("Guia DIFAL", r["difal"]), ("Guia FCP", r["fcp"])])
             bloco("Custos e conferência", [
                 ("A pagar à transportadora", r["frete_custo"]),
                 ("A pagar à montadora", r["montagem_custo"]),
