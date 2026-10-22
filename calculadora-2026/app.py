@@ -323,7 +323,9 @@ def entradas_atuais():
     contrib = ss.get("contribuinte")
     return dict(
         valor_produtos=ss.get("valor_produtos") or 0, estado=ss.get("estado"), cidade=ss.get("cidade"),
-        horario=None,  # SP Capital: custo estimado no horário comercial (frete não é cobrado do cliente)
+        # SP Capital: frete não é cobrado do cliente; o custo absorvido é registrado
+        # pelo percentual mais alto da Salis (fora do horário comercial).
+        horario="Fora do comercial" if sp_capital else None,
         contribuinte=contrib,
         finalidade=ss.get("finalidade") if contrib == CONTRIBUINTE else None,
         frete_opcao=ss.get("frete_opcao"), montagem_opcao=ss.get("montagem_opcao"),
@@ -445,8 +447,6 @@ if "sim" in ss:
                ("Montagem:", f"{e['montagem_opcao']} · {e['montagem_aplicacao']}")]
         if e["km_ida_volta"]:
             cab.append(("Distância:", f"{e['km_ida_volta']:.0f} km"))
-        if e["horario"]:
-            cab.append(("Horário:", e["horario"]))
         for titulo, valor in cab:
             y -= 14
             c.setFont("Helvetica-Bold", 10)
