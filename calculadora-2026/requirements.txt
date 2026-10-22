@@ -1,0 +1,4 @@
+streamlit>=1.50
+reportlab
+pandas
+requests
