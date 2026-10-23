@@ -6,6 +6,7 @@ import base64
 import csv
 import io
 import json
+import os
 from urllib.parse import quote
 
 import requests
@@ -37,13 +38,14 @@ def token_cnpja(st):
 # Parâmetros: gravar o config.json no GitHub
 # [github] token, repo, branch, path
 # ------------------------------------------------------------------
-def salvar_config_github(st, cfg, autor="Tela de Parâmetros (Adm)"):
+def salvar_config_github(st, cfg, arquivo="config.json", autor="Tela de Parâmetros (Adm)"):
     gh = _secao(st, "github")
     if not gh or not gh.get("token") or not gh.get("repo"):
         return False, "Integração com o GitHub não configurada (secrets [github])."
     repo = gh["repo"]
     branch = gh.get("branch", "main")
-    path = gh.get("path", "calculadora-2026/config.json")
+    pasta = gh.get("pasta") or os.path.dirname(gh.get("path", "calculadora-2026/config.json"))
+    path = f"{pasta}/{arquivo}" if pasta else arquivo
     url = f"https://api.github.com/repos/{repo}/contents/{quote(path)}"
     headers = {"Authorization": f"Bearer {gh['token']}",
                "Accept": "application/vnd.github+json",
@@ -68,7 +70,7 @@ def salvar_config_github(st, cfg, autor="Tela de Parâmetros (Adm)"):
 # ------------------------------------------------------------------
 # Microsoft 365 (planilha no SharePoint e e-mail)
 # [microsoft] tenant_id, client_id, client_secret
-# [sharepoint] site_hostname, site_path, file_path, table_name
+# [sharepoint] drive_id (ou site_hostname + site_path), file_path
 # [email] remetente, destinatarios (lista)
 # ------------------------------------------------------------------
 def _token_microsoft(st):
@@ -89,32 +91,46 @@ def _token_microsoft(st):
         return None, f"Falha de conexão com a Microsoft: {exc}"
 
 
-COLUNAS = [
-    "Data/hora do envio", "Data da simulação", "Vendedor", "Cliente", "CNPJ",
+COLUNAS_NFE = [
+    "Data/hora do envio", "Cálculo", "Data da simulação", "Vendedor", "Cliente", "CNPJ",
     "Razão social (consulta)", "Orçamento", "Nº do pedido",
     "Origem UF/cidade", "Origem contribuinte", "Data/hora da consulta", "Fonte da consulta",
     "Simples Nacional", "SUFRAMA",
-    "UF", "Localização", "Contribuinte", "Finalidade",
-    "Frete aplicado", "Montagem aplicada",
+    "UF", "Localização", "Contribuinte", "Finalidade", "Frete aplicado",
     "Valor dos produtos", "A pagar à transportadora", "A pagar à montadora",
-    "Frete cobrado", "Montagem cobrada", "DIFAL/FCP embutido",
-    "Guia DIFAL", "Guia FCP", "IPI", "Valor dos itens na NF", "Total da NF",
-    "Resultado frete/montagem", "% comissão", "Comissão correta",
-    "Comissão pelo sistema", "Diferença de comissão",
+    "Frete cobrado", "Montagem cobrada", "DIFAL/FCP embutido", "Despesas acessórias",
+    "Guia DIFAL", "Guia FCP", "IPI", "CBS", "IBS", "Valor dos itens na NF", "Total da NF",
+    "Resultado frete/montagem",
 ]
 
+COLUNAS_VA = [
+    "Data/hora do envio", "Cálculo", "Data da simulação", "Vendedor", "Cliente", "CNPJ",
+    "Orçamento", "Nº do pedido", "Arquiteto (RT)", "Itens", "Quantidade total",
+    "Desconto à vista (%)", "% NF de produto", "% NF de serviço",
+    "NF de produto (Cavaletti)", "IPI na NF de produto", "NF de serviço (Minimal)",
+    "CBS", "IBS", "Total do pedido", "% RT", "RT do arquiteto",
+    "ISS", "PIS/COFINS", "Valor líquido dos serviços", "Comissão do vendedor",
+    "Comissionamento empresa",
+]
 
-def linha_csv(valores):
+TABELAS = {"nfe": ("Simulacoes", COLUNAS_NFE), "va": ("VendaAssistida", COLUNAS_VA)}
+
+
+def linha_csv(valores, tipo="nfe"):
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
-    w.writerow(COLUNAS)
+    w.writerow(TABELAS[tipo][1])
     w.writerow(valores)
     return buf.getvalue().encode("utf-8-sig")
 
 
-def registrar_planilha(st, valores, token=None):
+def registrar_planilha(st, valores, token=None, tipo="nfe"):
+    """
+    [sharepoint] drive_id + file_path   (biblioteca específica, recomendado), ou
+                 site_hostname + site_path + file_path (biblioteca padrão do site)
+    """
     sp = _secao(st, "sharepoint")
-    if not sp or any(not sp.get(k) for k in ("site_hostname", "site_path", "file_path")):
+    if not sp or not sp.get("file_path") or not (sp.get("drive_id") or (sp.get("site_hostname") and sp.get("site_path"))):
         return False, "Planilha ainda não configurada (secrets [sharepoint])."
     if token is None:
         token, erro = _token_microsoft(st)
@@ -122,19 +138,20 @@ def registrar_planilha(st, valores, token=None):
             return False, erro
     h = {"Authorization": f"Bearer {token}"}
     try:
-        site = requests.get(f"{GRAPH}/sites/{sp['site_hostname']}:{sp['site_path']}",
-                            headers=h, timeout=TIMEOUT)
-        if site.status_code != 200:
-            return False, f"Site do SharePoint não encontrado ({site.status_code})."
-        site_id = site.json()["id"]
-        arq = requests.get(f"{GRAPH}/sites/{site_id}/drive/root:/{quote(sp['file_path'])}",
-                           headers=h, timeout=TIMEOUT)
+        if sp.get("drive_id"):
+            drive = f"{GRAPH}/drives/{sp['drive_id']}"
+        else:
+            site = requests.get(f"{GRAPH}/sites/{sp['site_hostname']}:{sp['site_path']}",
+                                headers=h, timeout=TIMEOUT)
+            if site.status_code != 200:
+                return False, f"Site do SharePoint não encontrado ({site.status_code})."
+            drive = f"{GRAPH}/sites/{site.json()['id']}/drive"
+        arq = requests.get(f"{drive}/root:/{quote(sp['file_path'])}", headers=h, timeout=TIMEOUT)
         if arq.status_code != 200:
             return False, f"Planilha não encontrada ({arq.status_code})."
-        tabela = sp.get("table_name", "Simulacoes")
-        add = requests.post(
-            f"{GRAPH}/sites/{site_id}/drive/items/{arq.json()['id']}/workbook/tables/{tabela}/rows/add",
-            headers=h, json={"values": [valores]}, timeout=TIMEOUT)
+        tabela = sp.get(f"tabela_{tipo}") or TABELAS[tipo][0]
+        add = requests.post(f"{drive}/items/{arq.json()['id']}/workbook/tables/{tabela}/rows/add",
+                            headers=h, json={"values": [valores]}, timeout=TIMEOUT)
         if add.status_code in (200, 201):
             return True, "Simulação salva na planilha."
         return False, f"Não foi possível incluir a linha na planilha ({add.status_code})."
@@ -178,11 +195,11 @@ def enviar_email(st, assunto, corpo_html, anexos, token=None):
         return False, f"Falha de conexão com o e-mail: {exc}"
 
 
-def enviar_e_salvar(st, valores, assunto, corpo_html, anexos):
+def enviar_e_salvar(st, valores, assunto, corpo_html, anexos, tipo="nfe"):
     """Faz as duas etapas; retorna (ok_planilha, msg_planilha, ok_email, msg_email)."""
     token, erro = _token_microsoft(st)
     if not token:
         return False, erro, False, erro
-    ok_p, msg_p = registrar_planilha(st, valores, token)
+    ok_p, msg_p = registrar_planilha(st, valores, token, tipo)
     ok_e, msg_e = enviar_email(st, assunto, corpo_html, anexos, token)
     return ok_p, msg_p, ok_e, msg_e
