@@ -148,7 +148,7 @@ def consultar(cnpj, token=None):
         try:
             r = requests.get(
                 f"https://api.cnpja.com/office/{c}",
-                params={"simples": "true", "registrations": "BR", "suframa": "true", "maxAge": 30},
+                params={"simples": "true", "registrations": "ORIGIN", "suframa": "true", "maxAge": 30},
                 headers={"Authorization": token}, timeout=TIMEOUT)
             if r.status_code == 200:
                 dados = _de_cnpja(r.json(), "CNPJá (comercial)", com_ie=True)
