@@ -28,7 +28,7 @@ Os cálculos de 2027 ficam visíveis, mas só o Adm consegue simular. Para liber
 
 ## Regras de preenchimento
 
-- NF-e: frete ao pedido ou aos itens; montagem e DIFAL/FCP sempre ao pedido (despesas acessórias). SP Capital: frete e montagem não são cobrados, e o custo é registrado com 4% da Salis.
+- NF-e: frete sempre ao pedido (campo de frete da NF); montagem sempre ao pedido (despesas acessórias); DIFAL/FCP sempre embutido nos itens. SP Capital: frete e montagem não são cobrados, e o custo é registrado com 4% da Salis.
 - Cavaletti: uma linha por produto (custo sem IPI, IPI, entrega/montagem por unidade, quantidade); % da NF de produto; desconto à vista; RT limitado pela tabela de RT.
 
 ## Secrets (Streamlit Cloud › app › Settings › Secrets)
