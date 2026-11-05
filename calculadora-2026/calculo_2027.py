@@ -17,7 +17,7 @@ import json
 import os
 from decimal import Decimal
 
-from calculo import (CONSUMIDOR_FINAL, ITENS, NAO_CONTRIBUINTE, PASTA,
+from calculo import (CONSUMIDOR_FINAL, NAO_CONTRIBUINTE, PASTA,
                      custo_frete, custo_montagem, d, pct)
 
 CONFIG_PATH = os.path.join(PASTA, "config_2027.json")
@@ -86,7 +86,6 @@ def calcular(e, cfg):
         liquido = custo * (1 - credito) + custo * margem / (1 - aliq_ir)
         return linha(liquido), liquido
 
-    frete_itens = e.get("frete_aplicacao") == ITENS
     liq_P = P * (1 - I) / (1 + A * T * I)
 
     def rodada(base):
@@ -123,7 +122,7 @@ def calcular(e, cfg):
             ipi=ipi, cbs=cbs, ibs=ibs, base_icms=base_icms,
             icms=I * base_icms, difal=DIFAL * base_icms, fcp=FCP * base_icms,
             total_nf=soma + ipi + cbs + ibs,
-            valor_itens_nf=P + (F if frete_itens else 0),
+            valor_itens_nf=P + E,
             liq_F=liq_F, liq_M=liq_M, liq_E=liq_E,
         )
 
@@ -148,8 +147,8 @@ def calcular(e, cfg):
     r.update(
         iteracoes=iteracoes,
         valor_produtos=P,
-        frete_nf=Decimal(0) if frete_itens else r["frete_final"],
-        despesas_acessorias_nf=r["montagem_final"] + r["difal_fcp_embutido"],
+        frete_nf=r["frete_final"],
+        despesas_acessorias_nf=r["montagem_final"],
         sobra_difal=r["liq_E"] - r["difal"] - r["fcp"] - (I * r["ipi"] if icms_sobre_ipi else 0),
         resultado_estimado=resultado,
         multiplicador=(1 + A * T * I) / (1 - I),

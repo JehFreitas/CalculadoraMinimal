@@ -229,10 +229,6 @@ def render(ano):
             if ss.get(k("frete_opcao")) == "Informar valor negociado":
                 st.number_input("Valor negociado do frete *", min_value=0.0, value=None,
                                 format="%.2f", key=k("frete_negociado"))
-            if ss.get(k("frete_opcao")) != "Não contratar" and not sem_cobranca:
-                st.radio("Frete aplicado: *", [PEDIDO, ITENS], index=None, key=k("frete_aplicacao"),
-                         help="Ao pedido: campo de frete da NF. Aos itens: somado ao valor dos produtos. "
-                              "Use a mesma escolha do pedido no ERP.")
         with c2:
             st.radio("Montagem *", OPCOES, index=None, key=k("montagem_opcao"))
             if ss.get(k("montagem_opcao")) == "Informar valor negociado":
@@ -241,8 +237,10 @@ def render(ano):
             if ss.get(k("montagem_opcao")) == "Calcular" and estado and cidade and not sp_capital:
                 st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0,
                                 value=None, format="%.0f", key=k("km_ida_volta"))
-        st.caption("Montagem" + (" e DIFAL/FCP" if ss.get(k("contribuinte")) == NAO_CONTRIBUINTE else "")
-                   + ": sempre ao pedido, em despesas acessórias.")
+        st.caption("Frete: sempre ao pedido, no campo de frete da NF · Montagem: sempre ao pedido, "
+                   "em despesas acessórias"
+                   + (" · DIFAL/FCP: sempre embutido nos itens" if ss.get(k("contribuinte")) == NAO_CONTRIBUINTE else "")
+                   + ".")
         if sem_cobranca:
             st.caption("SP Capital: frete e montagem não são cobrados do cliente.")
 
@@ -263,9 +261,6 @@ def render(ano):
             f.append("Frete")
         elif ss.get(k("frete_opcao")) == "Informar valor negociado" and not ss.get(k("frete_negociado")):
             f.append("Valor negociado do frete")
-        if (ss.get(k("frete_opcao")) and ss.get(k("frete_opcao")) != "Não contratar"
-                and not sem_cobranca and not ss.get(k("frete_aplicacao"))):
-            f.append("Frete: aplicado ao pedido ou aos itens")
         if not ss.get(k("montagem_opcao")):
             f.append("Montagem")
         elif ss.get(k("montagem_opcao")) == "Informar valor negociado" and not ss.get(k("montagem_negociada")):
@@ -286,7 +281,7 @@ def render(ano):
             frete_negociado=ss.get(k("frete_negociado")) or 0,
             montagem_negociada=ss.get(k("montagem_negociada")) or 0,
             km_ida_volta=(ss.get(k("km_ida_volta")) or 0) if not sp_capital else 0,
-            frete_aplicacao=ss.get(k("frete_aplicacao")) if not sem_cobranca else PEDIDO,
+            frete_aplicacao=PEDIDO,
             montagem_aplicacao=PEDIDO,
         )
 
@@ -339,16 +334,12 @@ def render(ano):
     rot_emb = "DIFAL/FCP embutido" if sem_ie else "ICMS sobre IPI embutido (consumidor final)"
     linhas_nf = [("Valor dos itens na NF (vProd)", r["valor_itens_nf"]),
                  ("  · produtos", r["valor_produtos"])]
-    if e["frete_aplicacao"] == ITENS and r["frete_final"]:
-        linhas_nf.append(("  · frete aplicado aos itens", r["frete_final"]))
+    if r["difal_fcp_embutido"]:
+        linhas_nf.append((f"  · {rot_emb}", r["difal_fcp_embutido"]))
     if r["frete_nf"]:
-        linhas_nf.append(("Frete destacado (vFrete)", r["frete_nf"]))
+        linhas_nf.append(("Frete (vFrete)", r["frete_nf"]))
     if r["despesas_acessorias_nf"]:
-        linhas_nf.append(("Despesas acessórias (vOutro)", r["despesas_acessorias_nf"]))
-        if r["montagem_final"]:
-            linhas_nf.append(("  · montagem", r["montagem_final"]))
-        if r["difal_fcp_embutido"]:
-            linhas_nf.append((f"  · {rot_emb}", r["difal_fcp_embutido"]))
+        linhas_nf.append(("Despesas acessórias · montagem (vOutro)", r["despesas_acessorias_nf"]))
     linhas_nf.append(("Valor do IPI", r["ipi"]))
     if ano == "2027":
         linhas_nf += [("CBS (por fora)", r["cbs"]), ("IBS (por fora)", r["ibs"])]
@@ -381,7 +372,7 @@ def render(ano):
            ("CNPJ:", meta["cnpj"]), ("Orçamento:", meta["orcamento"]),
            ("Destino:", f"{e['estado']} · {e['cidade']}"),
            ("Perfil fiscal:", e["contribuinte"] + (f" · {e['finalidade']}" if e["finalidade"] else "")),
-           ("Frete:", f"{e['frete_opcao']}" + (f" · {e['frete_aplicacao']}" if e["frete_opcao"] != "Não contratar" else "")),
+           ("Frete:", e["frete_opcao"]),
            ("Montagem:", e["montagem_opcao"])]
     if e["km_ida_volta"]:
         cab.append(("Distância:", f"{e['km_ida_volta']:.0f} km"))
@@ -400,7 +391,7 @@ def render(ano):
                 ("Resultado frete/montagem (antes do IR)", r["resultado_estimado"]),
             ]))
             if r["difal_fcp_embutido"]:
-                linhas = [("Embutido em despesas acessórias", r["difal_fcp_embutido"])]
+                linhas = [("Embutido nos itens", r["difal_fcp_embutido"])]
                 if ano == "2026":
                     linhas += [("ICMS sobre IPI e embutido", r["icms_extra"]),
                                ("PIS/COFINS sobre o embutido", r["pis_cofins_extra"])]

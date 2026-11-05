@@ -85,9 +85,9 @@ def custo_montagem(base, e, cfg):
 def calcular(e, cfg):
     """
     e: entradas do formulário.
-      e["frete_aplicacao"] ∈ {PEDIDO, ITENS}
-    Montagem e o valor embutido (DIFAL/FCP ou ICMS sobre IPI) vão SEMPRE ao pedido,
-    em despesas acessórias (vOutro).
+    Frete: sempre ao pedido, em campo próprio (vFrete).
+    Montagem: sempre ao pedido, em despesas acessórias (vOutro).
+    Valor embutido (DIFAL/FCP ou ICMS sobre IPI): sempre aos itens (vProd).
     """
     imp, res = cfg["impostos"], cfg["resultado"]
     uf = cfg["estados"][e["estado"]]
@@ -125,7 +125,7 @@ def calcular(e, cfg):
         lucro_antes_ir = custo * margem / (1 - aliq_ir)
         return (custo * (1 - credito) + lucro_antes_ir) / (1 - carga)
 
-    # Valor embutido E (despesas acessórias) para cobrir impostos fora do preço:
+    # Valor embutido E (sempre aos itens) para cobrir impostos fora do preço:
     #   - não contribuinte: guias de DIFAL/FCP;
     #   - contribuinte consumidor final: ICMS sobre o IPI (opção do Adm).
     # E vira valor de produto, então também gera:
@@ -161,7 +161,6 @@ def calcular(e, cfg):
                     difal_fcp_embutido=embutido, icms_extra=icms_extra,
                     pis_cofins_extra=pis_extra)
 
-    frete_itens = e.get("frete_aplicacao") == ITENS
 
     def rodada(base):
         frete, aviso = custo_frete(base, e, cfg)
@@ -169,14 +168,14 @@ def calcular(e, cfg):
         f_final = preco(frete, cred_frete)
         m_final = preco(mont, cred_mont)
         nf = montar_nf(f_final, m_final)
-        itens = P + (f_final if frete_itens else 0)
+        itens = P + nf["difal_fcp_embutido"]
         return dict(frete_custo=frete, aviso=aviso, montagem_custo=mont,
                     montagem_pct=mont_pct, montagem_km=mont_km,
                     frete_final=f_final, montagem_final=m_final,
                     valor_itens_nf=itens, **nf)
 
-    # O valor dos itens na NF (vProd) é a base da Salis e da montadora; com o frete
-    # aplicado aos itens, ele depende do próprio frete: repetimos até estabilizar.
+    # O valor dos itens na NF (vProd) é a base da Salis e da montadora; com o DIFAL
+    # embutido nos itens, ele depende do próprio cálculo: repetimos até estabilizar.
     valor_itens = P
     for iteracoes in range(1, 201):
         r = rodada(valor_itens)
@@ -200,8 +199,8 @@ def calcular(e, cfg):
     r.update(
         iteracoes=iteracoes,
         valor_produtos=P,
-        frete_nf=Decimal(0) if frete_itens else r["frete_final"],                 # vFrete
-        despesas_acessorias_nf=r["montagem_final"] + r["difal_fcp_embutido"],      # vOutro
+        frete_nf=r["frete_final"],                 # vFrete
+        despesas_acessorias_nf=r["montagem_final"],  # vOutro
         multiplicador=1 / (1 - carga),
         carga=carga,
         resultado_estimado=resultado,
