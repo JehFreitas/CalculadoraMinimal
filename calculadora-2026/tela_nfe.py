@@ -538,17 +538,22 @@ def render(ano):
                      cond_rotulo=f"{cond['codigo']} - {cond['descricao']}", politica_pct=pol,
                      limite=lim_ef, aviso_politica=aviso_pol,
                      politica_efetiva=pol_ef, erp=descontos.lancamentos_erp(r, pol_comp, com))
-            if faixas:
-                adic = (com.get("comissao") or {}).get("adicional_divisao", 0) if e["dividir"] else 0
-                cv, cpct, fora = descontos.comissao_estimada(
-                    faixas, e["total_tabela"], cond_pct, pol,
-                    [(x["valor"], x["pct"]) for x in e["excecoes"]], adic)
-                r["comissao"] = dict(valor=cv, pct=cpct, fora=fora, adicional=adic)
             if e["dividir"]:
                 dv = descontos.dividir(r, com, cfg["impostos"]["ipi"], pol_comp)
                 prop = dv["total_produtos"] / r["total_nf"] if r["total_nf"] else 0
                 dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
                 r["divisao"] = dv
+            if faixas:
+                # Comissão: % da faixa de cada item (média ponderada pelos produtos) sobre o
+                # valor líquido da nota sem IPI (pedido dividido: NF-e sem IPI + NFS-e).
+                adic = (com.get("comissao") or {}).get("adicional_divisao", 0) if e["dividir"] else 0
+                _, cpct, fora = descontos.comissao_estimada(
+                    faixas, e["total_tabela"], cond_pct, pol,
+                    [(x["valor"], x["pct"]) for x in e["excecoes"]], adic)
+                dvc = r.get("divisao")
+                base_c = (dvc["total_produtos"] - dvc["ipi_produtos"] + dvc["servico"]) if dvc \
+                    else r["total_nf"] - r["ipi"]
+                r["comissao"] = dict(valor=base_c * cpct / 100, pct=cpct, fora=fora, adicional=adic, base=base_c)
             cons = ss.get(k("consulta")) or {}
             mesmo = cons.get("ok") and cons.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj"), ""))
             meta = dict(meta_atual(), data=ss.get(k("data")),
@@ -624,7 +629,7 @@ def render(ano):
         cmr = r.get("comissao")
         if cmr:
             st.write(md(f"Comissão estimada ({e['divisao_venda']}): **{formatar(cmr['valor'])}** · "
-                        + f"{float(cmr['pct']):.2f}%".replace(".", ",") + " sobre o valor dos produtos"
+                        + f"{float(cmr['pct']):.2f}%".replace(".", ",") + f" sobre {formatar(cmr['base'])} (valor da nota sem IPI)"
                         + (f" (inclui {float(cmr['adicional']):g}% pela divisão)".replace(".", ",") if cmr["adicional"] else "")))
             if cmr["fora"]:
                 st.warning("Algum desconto está acima da tabela de comissão desta divisão de venda.")
