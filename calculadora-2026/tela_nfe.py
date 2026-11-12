@@ -19,6 +19,7 @@ from comum import formatar, md
 OPCOES = ["Calcular", "Informar valor negociado", "Não contratar"]
 MODO_PCT = "Informar o % da política"
 MODO_ALVO = "Informar o valor final desejado"
+MODO_COM = "Escolher a comissão desejada"
 CHAVE_COM = "cfg_comercial"
 
 MODULOS = {
@@ -218,6 +219,13 @@ def render(ano):
     conds = {c["codigo"]: c for c in descontos.condicoes_ativas(com)}
     limites = com["limites_politica"]
 
+    def limite_efetivo(equipe, faixas):
+        """Limite da equipe e, quando há tabela de comissão, o maior desconto permitido na divisão."""
+        lim_eq = limites.get(equipe)
+        if lim_eq is None or not faixas:
+            return lim_eq
+        return min(float(lim_eq), float(faixas[-1][0]))
+
     comum.cabecalho(mod["titulo"], mod["subtitulo"])
     liberado, motivo = (True, "") if ano == "2026" else motor.pronto_para_uso(cfg)
     if not liberado:
@@ -313,8 +321,21 @@ def render(ano):
         c1.selectbox("Equipe do vendedor *", list(limites.keys()), index=None, key=k("equipe"),
                      placeholder="Selecione",
                      format_func=lambda eq: f"{eq} (política até {limites[eq]:g}%)".replace(".", ","))
-        c2.radio("Desconto da política *", [MODO_PCT, MODO_ALVO], index=None, key=k("modo_pol"))
-        limite = limites.get(ss.get(k("equipe")))
+        cm = com.get("comissao") or {}
+        tem_tab = ss.get(k("equipe")) in cm.get("equipes", [])
+        if tem_tab:
+            c1.selectbox("Divisão de venda *", list(cm["divisoes"].keys()), index=None, key=k("divisao_venda"),
+                         placeholder="Selecione")
+        faixas = descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda")))
+        modos = [MODO_PCT, MODO_ALVO] + ([MODO_COM] if tem_tab else [])
+        if ss.get(k("modo_pol")) not in modos:
+            ss[k("modo_pol")] = None
+        c2.radio("Desconto da política *", modos, index=None, key=k("modo_pol"))
+        limite = limite_efetivo(ss.get(k("equipe")), faixas)
+        if ss.get(k("modo_pol")) == MODO_COM and faixas:
+            st.selectbox("Comissão desejada *", list(range(len(faixas))), index=None, key=k("faixa"),
+                         format_func=lambda i: descontos.rotulo_faixa(faixas, i), placeholder="Selecione",
+                         help="A política fica no maior desconto da faixa escolhida (até o limite da equipe).")
         if ss.get(k("modo_pol")) == MODO_PCT:
             st.number_input("Desconto da política (%) *", min_value=0.0, max_value=100.0,
                             value=None, step=0.0001, format="%.4f", key=k("politica"),
@@ -410,7 +431,13 @@ def render(ano):
             f.append("Desconto da política (%)")
         elif ss.get(k("modo_pol")) == MODO_ALVO and not ss.get(k("alvo")):
             f.append("Valor total desejado")
-        lim = limites.get(ss.get(k("equipe")))
+        elif ss.get(k("modo_pol")) == MODO_COM and ss.get(k("faixa")) is None:
+            f.append("Comissão desejada")
+        cm_ = com.get("comissao") or {}
+        if ss.get(k("equipe")) in cm_.get("equipes", []) and not ss.get(k("divisao_venda")):
+            f.append("Divisão de venda")
+        lim = limite_efetivo(ss.get(k("equipe")),
+                             descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda"))))
         exc = excecoes_atuais()
         if ss.get(k("tem_exc")):
             if not exc:
@@ -443,6 +470,8 @@ def render(ano):
             total_tabela=ss.get(k("total_tabela")) or 0, condicao=ss.get(k("condicao")),
             equipe=ss.get(k("equipe")), modo_pol=modo,
             politica=ss.get(k("politica")) if modo == MODO_PCT else None,
+            divisao_venda=ss.get(k("divisao_venda")) if ss.get(k("equipe")) in (com.get("comissao") or {}).get("equipes", []) else None,
+            faixa=ss.get(k("faixa")) if modo == MODO_COM else None,
             alvo=ss.get(k("alvo")) if modo == MODO_ALVO else None,
             excecoes=excecoes_atuais(),
             estado=ss.get(k("estado")),
@@ -486,10 +515,15 @@ def render(ano):
             e = entradas_atuais()
             cond = conds[e["condicao"]]
             pm, calc_c, cond_pct = descontos.percentual_aplicado(cond, com)
+            faixas = descontos.tabela_comissao(com, e["equipe"], e["divisao_venda"])
+            lim_ef = limite_efetivo(e["equipe"], faixas)
+            pol_in = e["politica"]
+            if e["modo_pol"] == MODO_COM:
+                pol_in = min(float(faixas[e["faixa"]][0]), float(lim_ef))
             pol, r, aviso_pol = descontos.resolver(
-                e, cfg, motor, e["total_tabela"], cond_pct, limites[e["equipe"]],
-                "percentual" if e["modo_pol"] == MODO_PCT else "valor_final",
-                politica=e["politica"], alvo=e["alvo"],
+                e, cfg, motor, e["total_tabela"], cond_pct, lim_ef,
+                "valor_final" if e["modo_pol"] == MODO_ALVO else "percentual",
+                politica=pol_in, alvo=e["alvo"],
                 excecoes=[(x["valor"], x["pct"]) for x in e["excecoes"]])
             pol_ef = descontos.politica_efetiva(e["total_tabela"], cond_pct, r["valor_produtos"])
             # Teste no Focco: a política da capa incide sobre o que é lançado aos itens;
@@ -497,8 +531,14 @@ def render(ano):
             pol_comp = 0 if e["excecoes"] else pol
             r.update(total_tabela=calculo.d(e["total_tabela"]), cond_pct=cond_pct, cond_prazo=pm,
                      cond_rotulo=f"{cond['codigo']} - {cond['descricao']}", politica_pct=pol,
-                     limite=limites[e["equipe"]], aviso_politica=aviso_pol,
+                     limite=lim_ef, aviso_politica=aviso_pol,
                      politica_efetiva=pol_ef, erp=descontos.lancamentos_erp(r, pol_comp, com))
+            if faixas:
+                adic = (com.get("comissao") or {}).get("adicional_divisao", 0) if e["dividir"] else 0
+                cv, cpct, fora = descontos.comissao_estimada(
+                    faixas, e["total_tabela"], cond_pct, pol,
+                    [(x["valor"], x["pct"]) for x in e["excecoes"]], adic)
+                r["comissao"] = dict(valor=cv, pct=cpct, fora=fora, adicional=adic)
             if e["dividir"]:
                 dv = descontos.dividir(r, com, cfg["impostos"]["ipi"], pol_comp)
                 prop = dv["total_produtos"] / r["total_nf"] if r["total_nf"] else 0
@@ -576,8 +616,16 @@ def render(ano):
             st.warning(r["aviso_politica"])
         for titulo, valor in linhas_desc:
             st.write(md(f"{titulo}: {formatar(valor)}"))
+        cmr = r.get("comissao")
+        if cmr:
+            st.write(md(f"Comissão estimada ({e['divisao_venda']}): **{formatar(cmr['valor'])}** · "
+                        + f"{float(cmr['pct']):.2f}%".replace(".", ",") + " sobre o valor dos produtos"
+                        + (f" (inclui {float(cmr['adicional']):g}% pela divisão)".replace(".", ",") if cmr["adicional"] else "")))
+            if cmr["fora"]:
+                st.warning("Algum desconto está acima da tabela de comissão desta divisão de venda.")
         st.caption(f"Prazo médio da condição: {float(r['cond_prazo']):.1f} dias · "
-                   f"limite da política da equipe {e['equipe']}: {r['limite']:g}%".replace(".", ","))
+                   f"limite da política: {float(r['limite']):g}%".replace(".", ",")
+                   + (f" (equipe {e['equipe']}" + (f", {e['divisao_venda']})" if e.get("divisao_venda") else ")")))
 
     with st.container(border=True):
         st.subheader("Resumo da Nota Fiscal")
@@ -732,11 +780,12 @@ def render(ano):
             n(r.get("cbs", 0)), n(r.get("ibs", 0)), n(r["valor_itens_nf"]), n(r["total_nf"]),
             n(r["resultado_estimado"]),
             n(r["total_tabela"]), r["cond_rotulo"], n(r["cond_pct"]), e["equipe"],
-            "Valor final" if e["modo_pol"] == MODO_ALVO else "Percentual",
+            {MODO_ALVO: "Valor final", MODO_COM: "Comissão"}.get(e["modo_pol"], "Percentual"),
             round(float(r["politica_pct"]), 4), n(e["alvo"]) if e.get("alvo") else "",
             "Sim" if dv else "Não", n(dv["servico"]) if dv else "", n(dv["desconto_itens"]) if dv else "",
             n(dv["total_produtos"]) if dv else "",
             "; ".join(f"{x['item']}: {x['valor']:.2f} a {x['pct']:.4f}%" for x in e.get("excecoes") or []),
+            e.get("divisao_venda") or "", n(r["comissao"]["pct"]) if r.get("comissao") else "",
         ]
         pdf_adm = pdf(True)
         assunto = f"Simulação {versao} · {meta['orcamento']} · {meta['cliente']} · {meta['vendedor']}"

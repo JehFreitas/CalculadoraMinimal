@@ -232,3 +232,47 @@ def dividir(r, com, ipi_pct, pol_pct):
                 total_produtos=base_prod + ipi_prod,
                 retirar_montagem=erp["montagem"], retirar_difal=erp["difal"], retirar_fcp=erp["fcp"],
                 negativo=reducao < 0)
+
+
+# ------------------------------------------------------------------
+# Comissão por faixa de desconto (tabela 2023)
+# ------------------------------------------------------------------
+def tabela_comissao(com, equipe, divisao):
+    cm = com.get("comissao") or {}
+    if equipe not in cm.get("equipes", []) or divisao not in cm.get("divisoes", {}):
+        return None
+    return sorted(cm["divisoes"][divisao], key=lambda f: f[0])
+
+
+def faixa_comissao(faixas, pol_pct):
+    """% de comissão para a política informada; None = acima da tabela (não permitido)."""
+    p = d(pol_pct)
+    for maximo, comissao in faixas:
+        if p <= d(maximo):
+            return d(comissao)
+    return None
+
+
+def rotulo_faixa(faixas, i):
+    minimo = 0 if i == 0 else faixas[i - 1][0] + 1
+    maximo, comissao = faixas[i]
+    return f"{comissao:g}% de comissão (desconto de {minimo:g}% a {maximo:g}%)".replace(".", ",")
+
+
+def comissao_estimada(faixas, total_tabela, cond_pct, pol_pct, excecoes=(), adicional=0):
+    """Comissão sobre o valor dos produtos, item a item pela faixa de cada desconto.
+    Retorna (valor, % médio, algum item fora da tabela?)."""
+    fator = 1 + d(cond_pct) / 100
+    partes = [(d(total_tabela) - sum((d(v) for v, _ in excecoes), Decimal(0)), d(pol_pct))]
+    partes += [(d(v), d(p)) for v, p in excecoes]
+    valor = base = Decimal(0)
+    fora = False
+    for v, p in partes:
+        liquido = v * fator * (1 - p / 100)
+        taxa = faixa_comissao(faixas, p)
+        if taxa is None:
+            fora = True
+            taxa = Decimal(0)
+        valor += liquido * (taxa + d(adicional)) / 100
+        base += liquido
+    return valor, (valor / base * 100 if base else Decimal(0)), fora
