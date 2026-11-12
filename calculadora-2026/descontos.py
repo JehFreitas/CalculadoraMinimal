@@ -119,23 +119,38 @@ def parcelas_de_texto(txt):
 # ------------------------------------------------------------------
 # Política
 # ------------------------------------------------------------------
-def valor_produtos(total_tabela, cond_pct, pol_pct):
-    return d(total_tabela) * (1 + d(cond_pct) / 100) * (1 - d(pol_pct) / 100)
+def valor_produtos(total_tabela, cond_pct, pol_pct, excecoes=()):
+    """
+    Itens × (1 + condição) × (1 − política), item a item (como o Focco).
+    excecoes: [(valor de tabela do item já × quantidade, % de política do item)];
+    os demais itens (Total Itens − soma das exceções) levam a política padrão.
+    """
+    exc_val = sum((d(v) for v, _ in excecoes), Decimal(0))
+    liquido = (d(total_tabela) - exc_val) * (1 - d(pol_pct) / 100)
+    liquido += sum((d(v) * (1 - d(p) / 100) for v, p in excecoes), Decimal(0))
+    return liquido * (1 + d(cond_pct) / 100)
 
 
-def resolver(e, cfg, motor, total_tabela, cond_pct, limite, modo, politica=None, alvo=None):
+def politica_efetiva(total_tabela, cond_pct, valor_prod):
+    """Desconto médio da política sobre os itens (já com a condição), em %."""
+    base = d(total_tabela) * (1 + d(cond_pct) / 100)
+    return (1 - d(valor_prod) / base) * 100 if base else Decimal(0)
+
+
+def resolver(e, cfg, motor, total_tabela, cond_pct, limite, modo, politica=None, alvo=None, excecoes=()):
     """
     Calcula a NF a partir do Total Itens de tabela.
     modo "percentual": usa a política informada (até o limite).
     modo "valor_final": encontra a política que leva o Valor Total da NF ao alvo.
         Frete, montagem e DIFAL/FCP são sempre calculados normalmente; só a política muda.
         Nunca passa do limite nem fica abaixo de 0%.
+    excecoes: itens com política própria (fixa); a política calculada vale para os demais.
     Retorna (politica_pct, resultado, aviso).
     """
     limite = d(limite)
 
     def calc(pol):
-        ent = dict(e, valor_produtos=valor_produtos(total_tabela, cond_pct, pol))
+        ent = dict(e, valor_produtos=valor_produtos(total_tabela, cond_pct, pol, excecoes))
         return motor.calcular(ent, cfg)
 
     if modo == "percentual":

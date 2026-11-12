@@ -104,6 +104,7 @@ COLUNAS_NFE = [
     "Total Itens (tabela)", "Condição de pagamento", "% condição", "Equipe", "Modo da política",
     "% política", "Valor final desejado",
     "Divisão produto/serviço", "Pedido de serviço", "Desconto aos itens (produtos)", "Total pedido de produtos",
+    "Itens com desconto diferente",
 ]
 
 COLUNAS_VA = [
