@@ -101,6 +101,8 @@ COLUNAS_NFE = [
     "Frete cobrado", "Montagem cobrada", "DIFAL/FCP embutido", "Despesas acessórias",
     "Guia DIFAL", "Guia FCP", "IPI", "CBS", "IBS", "Valor dos itens na NF", "Total da NF",
     "Resultado frete/montagem",
+    "Total Itens (tabela)", "Condição de pagamento", "% condição", "Equipe", "Modo da política",
+    "% política", "Valor final desejado",
 ]
 
 COLUNAS_VA = [
@@ -183,8 +185,16 @@ def registrar_planilha(st, valores, token=None, tipo="nfe"):
         if erro:
             return False, erro
         tabela = sp.get(f"tabela_{tipo}") or TABELAS[tipo][0]
-        add = requests.post(f"{drive}/items/{item}/workbook/tables/{tabela}/rows/add",
-                            headers=h, json={"values": [valores]}, timeout=TIMEOUT)
+        base = f"{drive}/items/{item}/workbook/tables/{tabela}"
+        # Monta a linha pela ordem das colunas da tabela na planilha: colunas novas da
+        # calculadora que ainda não existem na planilha são ignoradas, e colunas extras
+        # da planilha ficam em branco.
+        por_nome = dict(zip(TABELAS[tipo][1], valores))
+        col = requests.get(f"{base}/columns?$select=name", headers=h, timeout=TIMEOUT)
+        if col.status_code == 200:
+            nomes = [c.get("name") for c in col.json().get("value", [])]
+            valores = [por_nome.get(nm, "") for nm in nomes]
+        add = requests.post(f"{base}/rows/add", headers=h, json={"values": [valores]}, timeout=TIMEOUT)
         if add.status_code in (200, 201):
             return True, "Simulação salva na planilha."
         return False, f"Não foi possível incluir a linha na planilha ({add.status_code}): {add.text[:150]}"
@@ -214,7 +224,15 @@ def testar_integracao(st):
                 nomes = [x.get("name") for x in t.json().get("value", [])] if t.status_code == 200 else []
                 for tipo, (padrao, _) in TABELAS.items():
                     nome = sp.get(f"tabela_{tipo}") or padrao
-                    res.append((nome in nomes, f"Tabela {nome}: " + ("ok." if nome in nomes else "não encontrada.")))
+                    if nome not in nomes:
+                        res.append((False, f"Tabela {nome}: não encontrada."))
+                        continue
+                    col = requests.get(f"{drive}/items/{item}/workbook/tables/{nome}/columns?$select=name",
+                                       headers=h, timeout=TIMEOUT)
+                    tem = [c.get("name") for c in col.json().get("value", [])] if col.status_code == 200 else []
+                    faltam = [c for c in TABELAS[tipo][1] if c not in tem]
+                    res.append((not faltam, f"Tabela {nome}: " + ("ok." if not faltam else
+                                "faltam as colunas " + ", ".join(faltam) + " (atualize pelo modelo).")))
         except requests.RequestException as exc:
             res.append((False, f"Falha de conexão com o SharePoint: {exc}"))
     em = _secao(st, "email")

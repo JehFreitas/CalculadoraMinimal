@@ -21,12 +21,17 @@ Os cálculos de 2027 ficam visíveis, mas só o Adm consegue simular. Para liber
 | `tela_nfe.py`, `tela_cavaletti.py` | Telas |
 | `calculo.py`, `calculo_2027.py`, `cavaletti.py` | Regras de cálculo |
 | `config.json`, `config_2027.json`, `config_cavaletti.json` | Parâmetros, editáveis pela área do Adm |
+| `config_comercial.json`, `descontos.py` | Condições de pagamento, limites da política e cálculo do desconto |
 | `consulta.py` | Consulta do cliente pelo CNPJ (CNPJá) |
 | `servicos.py`, `comum.py` | Planilha, e-mail, GitHub, PDF |
 | `modelos/Controle de Simulações - Calculadora Comercial.xlsx` | Planilha de controle (abas NF-e e Venda Assistida) |
 | `.streamlit/secrets.toml.exemplo` | Modelo dos Secrets |
 
 ## Regras de preenchimento
+
+- NF-e: o vendedor informa o Total Itens de tabela (sem descontos), a condição de pagamento, a equipe e a política (em % ou pelo valor final desejado). A calculadora aplica a condição e depois a política sobre os itens, como o Focco, e devolve o que lançar no orçamento.
+- % da condição: prazo médio = Σ (prazo da parcela + 30 dias de fabricação) × % da parcela (sinal = −23 dias); % = (1 + custo diário)^(prazo médio − 60) − 1, custo diário = 1,03^(1/30) − 1; arredondado ao múltiplo de 0,5%. Só aparecem as condições cadastradas no Focco com o mesmo %; as demais o vendedor pede ao ADM Comercial.
+- Modo valor final: só a política se ajusta (4 casas); frete, montagem e DIFAL/FCP nunca são reduzidos; o limite da equipe nunca é ultrapassado.
 
 - NF-e: frete sempre ao pedido (campo de frete da NF); montagem sempre ao pedido (despesas acessórias); DIFAL/FCP sempre embutido nos itens. SP Capital: frete e montagem não são cobrados, e o custo é registrado com 4% da Salis.
 - Cavaletti: uma linha por produto (custo sem IPI, IPI, entrega/montagem por unidade, quantidade); % da NF de produto; desconto à vista; RT limitado pela tabela de RT.
