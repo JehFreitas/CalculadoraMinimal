@@ -65,10 +65,12 @@ def percentual_condicao(parcelas, par):
 
 
 def situacao_condicao(c, com):
-    """(disponível para o vendedor?, motivo). Só entra a condição ativa, cadastrada no Focco
-    e cujo % no Focco é igual ao calculado."""
+    """(disponível para o vendedor?, motivo). Só entra a condição ativa, não exclusiva de cliente
+    e cujo % no Focco (sem política = 0%) é igual ao calculado."""
     if not c.get("ativa", True):
         return False, "Inativa"
+    if c.get("exclusiva_cliente"):
+        return False, "Exclusiva de cliente"
     if c.get("percentual_erp") is None:
         return False, "% no Focco não confirmado"
     _, _, ap = percentual_condicao(c["parcelas"], com["calculo_condicao"])
