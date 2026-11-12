@@ -492,12 +492,15 @@ def render(ano):
                 politica=e["politica"], alvo=e["alvo"],
                 excecoes=[(x["valor"], x["pct"]) for x in e["excecoes"]])
             pol_ef = descontos.politica_efetiva(e["total_tabela"], cond_pct, r["valor_produtos"])
+            # Teste no Focco: a política da capa incide sobre o que é lançado aos itens;
+            # a política lançada em cada item (exceções) não incide. Só compensa no 1º caso.
+            pol_comp = 0 if e["excecoes"] else pol
             r.update(total_tabela=calculo.d(e["total_tabela"]), cond_pct=cond_pct, cond_prazo=pm,
                      cond_rotulo=f"{cond['codigo']} - {cond['descricao']}", politica_pct=pol,
                      limite=limites[e["equipe"]], aviso_politica=aviso_pol,
-                     politica_efetiva=pol_ef, erp=descontos.lancamentos_erp(r, pol_ef, com))
+                     politica_efetiva=pol_ef, erp=descontos.lancamentos_erp(r, pol_comp, com))
             if e["dividir"]:
-                dv = descontos.dividir(r, com, cfg["impostos"]["ipi"], pol_ef)
+                dv = descontos.dividir(r, com, cfg["impostos"]["ipi"], pol_comp)
                 prop = dv["total_produtos"] / r["total_nf"] if r["total_nf"] else 0
                 dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
                 r["divisao"] = dv
