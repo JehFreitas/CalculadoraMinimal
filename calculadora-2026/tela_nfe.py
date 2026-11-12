@@ -561,6 +561,18 @@ def render(ano):
                        ("   incluir desconto em valor, aplicável aos itens", dv["desconto_itens"]),
                        ("   IPI do pedido de produtos", dv["ipi_produtos"]),
                        (f"   Valor Total do pedido de produtos ({100 - float(dv['pct_servico']):g}%)", dv["total_produtos"])]
+        guia_orig = r["difal"] + r["fcp"]
+        guia_div = dv["guia_difal"] + dv["guia_fcp"]
+        linhas_efeito = [("IPI: orçamento original", r["ipi"]), ("IPI: pedido de produtos", dv["ipi_produtos"])]
+        if guia_orig:
+            linhas_efeito += [("Guias DIFAL + FCP: orçamento original", guia_orig),
+                              ("Guias DIFAL + FCP: pedido de produtos", guia_div)]
+        linhas_efeito.append(("Diferença que fica com a empresa (IPI + guias), antes do ISS",
+                              (r["ipi"] - dv["ipi_produtos"]) + (guia_orig - guia_div)))
+    if dv and not comum.adm_logado():
+        st.info("Divisão em pedido de produtos e de serviço marcada. Monte o orçamento normalmente, "
+                "com os valores acima: o ADM Comercial faz a divisão depois.")
+    elif dv:
         with st.container(border=True):
             st.subheader("Divisão em pedido de produtos e de serviço (ADM Comercial)")
             if dv["negativo"]:
@@ -571,6 +583,10 @@ def render(ano):
             st.caption("Montagem, DIFAL e FCP ficam cobertos pelo pedido de serviço. "
                        + ("O desconto já considera que a política do ERP incide sobre o que é lançado aos itens."
                           if com.get("politica_desconta_acrescimos_aos_itens") else ""))
+            st.markdown("**Efeito da divisão**")
+            for titulo, valor in linhas_efeito:
+                st.write(md(f"{titulo}: {formatar(valor)}"))
+            st.caption("Frete e montagem: custos considerados sobre o orçamento original (a confirmar).")
 
     if desatualizado:
         return
@@ -593,10 +609,11 @@ def render(ano):
         blocos = [("Condição e desconto", linhas_desc),
                   ("Resumo da Nota Fiscal (NFe)", linhas_nf),
                   ("Lançar no orçamento (ERP)", [(t, v) for t, v in linhas_erp if v is not None])]
-        if dv:
+        notas = []
+        if admin and dv:
             blocos.append(("Divisão em pedido de produtos e de serviço",
                            [(t.strip(), v) for t, v in linhas_div if v is not None]))
-        notas = []
+            blocos.append(("Efeito da divisão", linhas_efeito))
         if admin:
             if sem_ie:
                 if dv:
@@ -659,7 +676,11 @@ def render(ano):
                  + "".join(f"<tr><td>{t.strip()}</td><td><b>{formatar(v)}</b></td></tr>" for t, v in linhas_nf)
                  + f"<tr><td>A pagar à transportadora</td><td>{formatar(r['frete_custo'])}</td></tr>"
                  f"<tr><td>A pagar à montadora</td><td>{formatar(r['montagem_custo'])}</td></tr>"
-                 "</table><p>O PDF do Adm Comercial é protegido por senha.</p>")
+                 "</table>"
+                 + ("<p><b>Divisão em pedido de produtos e de serviço solicitada.</b></p><table cellpadding='4'>"
+                    + "".join(f"<tr><td>{t.strip()}</td><td><b>{formatar(v)}</b></td></tr>"
+                              for t, v in linhas_div if v is not None) + "</table>" if dv else "")
+                 + "<p>O PDF do Adm Comercial é protegido por senha.</p>")
         return linha, assunto, corpo, [(f"ADM_{base}.pdf", pdf_adm), (f"{base}.pdf", pdf(False))], pdf_adm
 
     comum.bloco_envio(sim, meta, "nfe", montar_envio, base)
