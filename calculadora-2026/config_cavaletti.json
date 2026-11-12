@@ -1,10 +1,22 @@
 {
   "_leia_me": "Parâmetros da Venda Assistida Cavaletti. Percentuais em %. tabela_rt: RT máximo conforme a participação da NF de serviço (Minimal) no pedido. 2027: cbs = null até a resolução do Senado; 'liberado' = true libera o uso.",
   "tabela_rt": [
-    {"servico_minimo": 20, "rt_maximo": 0},
-    {"servico_minimo": 30, "rt_maximo": 5},
-    {"servico_minimo": 40, "rt_maximo": 10},
-    {"servico_minimo": 50, "rt_maximo": 15}
+    {
+      "servico_minimo": 20,
+      "rt_maximo": 0
+    },
+    {
+      "servico_minimo": 30,
+      "rt_maximo": 5
+    },
+    {
+      "servico_minimo": 40,
+      "rt_maximo": 10
+    },
+    {
+      "servico_minimo": 50,
+      "rt_maximo": 15
+    }
   ],
   "2026": {
     "pis_cofins": 9.25,
@@ -15,7 +27,8 @@
     "irpj": 15,
     "aplicar_adicional_ir": false,
     "adicional_ir": 10,
-    "csll": 9
+    "csll": 9,
+    "liberado": false
   },
   "2027": {
     "liberado": false,

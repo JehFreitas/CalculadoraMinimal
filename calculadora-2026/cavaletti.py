@@ -36,6 +36,8 @@ def pronto_para_uso(cfg, ano):
         return False, "Aguardando a alíquota de referência da CBS para 2027 (resolução do Senado)."
     if ano == "2027" and not p.get("liberado"):
         return False, "Alíquotas cadastradas, aguardando liberação pelo Adm Comercial."
+    if ano == "2026" and not p.get("liberado", False):
+        return False, "Cálculo em validação com a diretoria. Por enquanto, use a planilha atual da venda assistida."
     return True, ""
 
 
