@@ -167,10 +167,12 @@ def parametros_comerciais(pid):
                            "Prazo médio": round(float(pm or 0), 1), "Calculado (%)": round(float(calc), 2),
                            "Aplicado (%)": float(ap), "No Focco (%)": c.get("percentual_erp"),
                            "Exclusiva de cliente": c.get("exclusiva_cliente", ""),
+                           "Usar % do Focco": bool(c.get("usar_percentual_erp", False)),
                            "Situação": descontos.situacao_condicao(c, com)[1],
                            "Observação": c.get("obs", "")})
         st.caption("O vendedor só vê as condições com situação Disponível: ativas, não exclusivas de cliente "
-                   "e com o % do Focco igual ao calculado (sem política no Focco = 0%). "
+                   "e com o % do Focco igual ao calculado (sem política no Focco = 0%), ou marcadas "
+                   "para usar o % do Focco. "
                    "As demais ele pede ao ADM Comercial.")
         df = st.data_editor(pd.DataFrame(linhas), num_rows="dynamic", hide_index=True, key=f"{pid}_c_cond",
                             disabled=["Prazo médio", "Calculado (%)", "Aplicado (%)", "Situação"])
@@ -179,6 +181,7 @@ def parametros_comerciais(pid):
                  parcelas=descontos.parcelas_de_texto(r["Parcelas"]), ativa=bool(r["Ativa"]),
                  percentual_erp=None if pd.isna(r["No Focco (%)"]) else float(r["No Focco (%)"]),
                  exclusiva_cliente="" if pd.isna(r["Exclusiva de cliente"]) else str(r["Exclusiva de cliente"]).strip(),
+                 usar_percentual_erp=bool(r["Usar % do Focco"]) if not pd.isna(r["Usar % do Focco"]) else False,
                  obs="" if pd.isna(r["Observação"]) else str(r["Observação"]))
             for _, r in df.iterrows() if not pd.isna(r["Código"]) and str(r["Descrição"]).strip()]
 
@@ -427,7 +430,7 @@ def render(ano):
         else:
             e = entradas_atuais()
             cond = conds[e["condicao"]]
-            pm, calc_c, cond_pct = descontos.percentual_condicao(cond["parcelas"], com["calculo_condicao"])
+            pm, calc_c, cond_pct = descontos.percentual_aplicado(cond, com)
             pol, r, aviso_pol = descontos.resolver(
                 e, cfg, motor, e["total_tabela"], cond_pct, limites[e["equipe"]],
                 "percentual" if e["modo_pol"] == MODO_PCT else "valor_final",

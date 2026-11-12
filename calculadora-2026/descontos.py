@@ -64,6 +64,14 @@ def percentual_condicao(parcelas, par):
     return pm, calc, aplicado + 0   # + 0 evita "-0"
 
 
+def percentual_aplicado(c, com):
+    """% usado no cálculo: o calculado, ou o do Focco quando o ADM decidiu mantê-lo."""
+    pm, calc, ap = percentual_condicao(c["parcelas"], com["calculo_condicao"])
+    if c.get("usar_percentual_erp") and c.get("percentual_erp") is not None:
+        ap = d(c["percentual_erp"])
+    return pm, calc, ap
+
+
 def situacao_condicao(c, com):
     """(disponível para o vendedor?, motivo). Só entra a condição ativa, não exclusiva de cliente
     e cujo % no Focco (sem política = 0%) é igual ao calculado."""
@@ -73,6 +81,8 @@ def situacao_condicao(c, com):
         return False, "Exclusiva de cliente"
     if c.get("percentual_erp") is None:
         return False, "% no Focco não confirmado"
+    if c.get("usar_percentual_erp"):
+        return True, "Disponível (% do Focco)"
     _, _, ap = percentual_condicao(c["parcelas"], com["calculo_condicao"])
     if abs(ap - d(c["percentual_erp"])) > Decimal("0.0001"):
         return False, "% do Focco diferente do calculado"
@@ -84,7 +94,7 @@ def condicoes_ativas(com):
 
 
 def rotulo_condicao(c, com):
-    _, _, ap = percentual_condicao(c["parcelas"], com["calculo_condicao"])
+    _, _, ap = percentual_aplicado(c, com)
     sinal = "desconto" if ap < 0 else "acréscimo" if ap > 0 else "sem desconto"
     pct = f" {abs(ap):.2f}%".replace(".", ",") if ap else ""
     return f"{c['codigo']} - {c['descricao']} ({sinal}{pct})"
