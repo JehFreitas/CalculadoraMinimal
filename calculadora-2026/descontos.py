@@ -180,3 +180,40 @@ def lancamentos_erp(r, pol_pct, com):
         difal_l, fcp_l = difal_l / fator, fcp_l / fator
     return dict(frete=r["frete_nf"], montagem=r["despesas_acessorias_nf"], difal=difal_l, fcp=fcp_l,
                 embutido_sem_guia=(guias == 0 and E > 0))
+
+
+# ------------------------------------------------------------------
+# Divisão em pedido de produtos e pedido de serviço (feita pelo ADM Comercial)
+# ------------------------------------------------------------------
+def dividir(r, com, ipi_pct, pol_pct):
+    """
+    Política da empresa: o orçamento (Valor Total da NF) é dividido em
+      - pedido de serviço = % de serviço × total (sem ICMS, IPI, acréscimos ou descontos);
+      - pedido de produtos = o restante.
+    No pedido de produtos saem os acréscimos de montagem, DIFAL e FCP (cobertos pelo serviço);
+    frete, condição e política continuam. Falta um desconto em valor aos itens que faça
+    o pedido de produtos fechar no restante:
+      (itens líquidos − desconto + frete) × (1 + IPI) = total de produtos
+    Se a política do ERP incide sobre o que é lançado aos itens, o desconto lançado é
+    aumentado para que o efeito líquido seja o necessário.
+    """
+    total = r["total_nf"]
+    pct_serv = d(com.get("divisao_servico_pct", 40)) / 100
+    servico = total * pct_serv
+    produtos = total - servico
+    ipi = d(ipi_pct) / 100
+    itens = r["valor_produtos"]                 # já com condição e política, sem DIFAL/FCP
+    frete = r["frete_nf"]
+    reducao = itens + frete - produtos / (1 + ipi)
+    lancar = reducao
+    if com.get("politica_desconta_acrescimos_aos_itens") and pol_pct:
+        lancar = reducao / (1 - d(pol_pct) / 100)
+    base_prod = itens - reducao + frete
+    ipi_prod = base_prod * ipi
+    erp = r["erp"]
+    return dict(pct_servico=pct_serv * 100, servico=servico, produtos=produtos,
+                desconto_itens=lancar, reducao_liquida=reducao,
+                itens_produtos=itens - reducao, ipi_produtos=ipi_prod,
+                total_produtos=base_prod + ipi_prod,
+                retirar_montagem=erp["montagem"], retirar_difal=erp["difal"], retirar_fcp=erp["fcp"],
+                negativo=reducao < 0)
