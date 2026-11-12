@@ -570,8 +570,12 @@ def render(ano):
         linhas_efeito.append(("Diferença que fica com a empresa (IPI + guias), antes do ISS",
                               (r["ipi"] - dv["ipi_produtos"]) + (guia_orig - guia_div)))
     if dv and not comum.adm_logado():
-        st.info("Divisão em pedido de produtos e de serviço marcada. Monte o orçamento normalmente, "
-                "com os valores acima: o ADM Comercial faz a divisão depois.")
+        with st.container(border=True):
+            st.subheader("Após a divisão (para informar o cliente)")
+            st.write(md(f"Total NFe (produtos): **{formatar(dv['total_produtos'])}**"))
+            st.write(md(f"Total NFSe (serviço): **{formatar(dv['servico'])}**"))
+            st.caption("Monte o orçamento normalmente, com os valores acima. "
+                       "O ADM Comercial faz a divisão depois.")
     elif dv:
         with st.container(border=True):
             st.subheader("Divisão em pedido de produtos e de serviço (ADM Comercial)")
@@ -610,6 +614,9 @@ def render(ano):
                   ("Resumo da Nota Fiscal (NFe)", linhas_nf),
                   ("Lançar no orçamento (ERP)", [(t, v) for t, v in linhas_erp if v is not None])]
         notas = []
+        if dv and not admin:
+            blocos.append(("Após a divisão", [("Total NFe (produtos)", dv["total_produtos"]),
+                                              ("Total NFSe (serviço)", dv["servico"])]))
         if admin and dv:
             blocos.append(("Divisão em pedido de produtos e de serviço",
                            [(t.strip(), v) for t, v in linhas_div if v is not None]))
