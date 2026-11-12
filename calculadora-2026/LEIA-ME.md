@@ -8,7 +8,7 @@ App do Streamlit em pasta própria. A calculadora antiga (`calculadora-minimal-n
 |---|---|---|
 | NF-e Minimal › Cálculo 2026 | Em uso | Lucro real: PIS/COFINS 9,25% com créditos, IPI, ICMS, DIFAL/FCP |
 | NF-e Minimal › Cálculo 2027 | 🔒 Bloqueado | CBS/IBS por fora no lugar de PIS/COFINS, IPI zero |
-| Venda Assistida › Cavaletti 2026 | Em uso | NF de produto da Cavaletti + NF de serviço da Minimal (ISS + PIS/COFINS) |
+| Venda Assistida › Cavaletti 2026 | 🔒 Em validação | NF de produto da Cavaletti + NF de serviço da Minimal (ISS + PIS/COFINS) |
 | Venda Assistida › Cavaletti 2027 | 🔒 Bloqueado | NF de serviço com ISS e CBS/IBS por fora, IPI zero |
 
 Os cálculos de 2027 ficam visíveis, mas só o Adm consegue simular. Para liberar: área do Adm › Parâmetros do cálculo › marcar "Alíquota da CBS definida", informar a alíquota fixada pelo Senado, marcar "Liberar este cálculo para o Comercial" e salvar.

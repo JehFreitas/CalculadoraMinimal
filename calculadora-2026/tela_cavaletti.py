@@ -50,6 +50,9 @@ def parametros(ano, pid):
                                         key=f"{pid}_p_lib", disabled=p.get("cbs") is None)
             if p.get("cbs") is None:
                 p["liberado"] = False
+        else:
+            p["liberado"] = st.checkbox("Liberar este cálculo para o Comercial", value=p.get("liberado", False),
+                                        key=f"{pid}_p_lib", help="Marque depois da validação com a diretoria.")
 
         st.subheader("Tabela de RT (vale para 2026 e 2027)")
         df = pd.DataFrame(novo["tabela_rt"]).rename(columns={

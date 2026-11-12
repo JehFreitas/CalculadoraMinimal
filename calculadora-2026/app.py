@@ -39,7 +39,7 @@ paginas = st.navigation({
         st.Page(nfe_2027, title="Cálculo 2027", icon="🔒", url_path="calculo-2027"),
     ],
     "Venda Assistida Cavaletti": [
-        st.Page(cav_2026, title="Cavaletti 2026", icon="🪑", url_path="cavaletti-2026"),
+        st.Page(cav_2026, title="Cavaletti 2026", icon="🔒", url_path="cavaletti-2026"),
         st.Page(cav_2027, title="Cavaletti 2027", icon="🔒", url_path="cavaletti-2027"),
     ],
 })
