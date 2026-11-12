@@ -859,5 +859,76 @@
    "usar_percentual_erp": true
   }
  ],
- "divisao_servico_pct": 40
+ "divisao_servico_pct": 40,
+ "comissao": {
+  "_leia_me": "Tabela de descontos e comissão 2023 (categoria verde: vendedor CLT e agente comercial remunerado). Faixas: [desconto máximo da faixa em %, comissão em %]. Acima da última faixa da divisão: não permitido.",
+  "equipes": [
+   "Equipe Interna"
+  ],
+  "adicional_divisao": 2.0,
+  "divisoes": {
+   "Sem RT": [
+    [
+     15,
+     10
+    ],
+    [
+     25,
+     9
+    ],
+    [
+     30,
+     8
+    ],
+    [
+     35,
+     5
+    ],
+    [
+     40,
+     3
+    ],
+    [
+     45,
+     2
+    ]
+   ],
+   "Com RT 5%": [
+    [
+     15,
+     7
+    ],
+    [
+     25,
+     6
+    ],
+    [
+     30,
+     5
+    ],
+    [
+     35,
+     2
+    ],
+    [
+     40,
+     1
+    ]
+   ],
+   "Com RT 10%": [
+    [
+     15,
+     5
+    ],
+    [
+     25,
+     4
+    ],
+    [
+     30,
+     3
+    ]
+   ]
+  }
+ }
 }
