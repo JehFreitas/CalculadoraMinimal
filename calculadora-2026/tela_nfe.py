@@ -628,9 +628,10 @@ def render(ano):
             st.write(md(f"{titulo}: {formatar(valor)}"))
         cmr = r.get("comissao")
         if cmr:
-            st.write(md(f"Comissão estimada ({e['divisao_venda']}): **{formatar(cmr['valor'])}** · "
-                        + f"{float(cmr['pct']):.2f}%".replace(".", ",") + f" sobre {formatar(cmr['base'])} (valor da nota sem IPI)"
-                        + (f" (inclui {float(cmr['adicional']):g}% pela divisão)".replace(".", ",") if cmr["adicional"] else "")))
+            st.write(md(f"Faixa de comissão ({e['divisao_venda']}): **"
+                        + f"{float(cmr['pct']):g}%".replace(".", ",") + "**"
+                        + (f" (inclui {float(cmr['adicional']):g}% pela divisão)".replace(".", ",") if cmr["adicional"] else "")
+                        + (" · média das faixas dos itens" if e.get("excecoes") else "")))
             if cmr["fora"]:
                 st.warning("Algum desconto está acima da tabela de comissão desta divisão de venda.")
         st.caption(f"Prazo médio da condição: {float(r['cond_prazo']):.1f} dias · "
