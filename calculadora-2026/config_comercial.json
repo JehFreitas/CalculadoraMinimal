@@ -1,0 +1,780 @@
+{
+ "_leia_me": "Condições de pagamento e limites da política de descontos. O percentual de cada condição é calculado pelo prazo médio de recebimento, como na planilha Revisão Acréscimos e Descontos (aba Revisão do Cálculo). percentual_erp: % cadastrado no Focco (null = não confirmado). A condição só aparece para o vendedor se estiver ativa e o % do Focco for igual ao calculado.",
+ "calculo_condicao": {
+  "custo_capital_mensal": 3.0,
+  "tempo_fabricacao_dias": 30,
+  "prazo_sinal_dias": -23,
+  "ponto_zero_ddf": 30,
+  "arredondamento": 0.5
+ },
+ "limites_politica": {
+  "Equipe Interna": 45.0,
+  "Equipe PJ": 52.0,
+  "Prime": 45.0,
+  "Representantes": 52.0
+ },
+ "politica_desconta_acrescimos_aos_itens": false,
+ "condicoes": [
+  {
+   "codigo": 43,
+   "descricao": "(7X)SINAL - 7DDF - 30DDF - 60DDF - 90DDF - 120DDF - 150DDF - VIP",
+   "parcelas": [
+    [
+     30,
+     16.67
+    ],
+    [
+     60,
+     16.67
+    ],
+    [
+     90,
+     16.67
+    ],
+    [
+     120,
+     16.67
+    ],
+    [
+     150,
+     16.66
+    ],
+    [
+     180,
+     16.66
+    ]
+   ],
+   "ativa": true,
+   "obs": "No ERP as parcelas são 30 a 180 DDF, diferente da descrição.",
+   "percentual_erp": null
+  },
+  {
+   "codigo": 80,
+   "descricao": "(3X) - 07 DDF - 30 DDF - 60 DDF - PV 11308",
+   "parcelas": [
+    [
+     7,
+     34.0
+    ],
+    [
+     30,
+     33.0
+    ],
+    [
+     60,
+     33.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -1.5
+  },
+  {
+   "codigo": 97,
+   "descricao": "VIP OFFICE",
+   "parcelas": [
+    [
+     "SINAL",
+     14.28
+    ],
+    [
+     7,
+     14.28
+    ],
+    [
+     30,
+     14.28
+    ],
+    [
+     60,
+     14.28
+    ],
+    [
+     90,
+     14.28
+    ],
+    [
+     120,
+     14.28
+    ],
+    [
+     150,
+     14.28
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": null
+  },
+  {
+   "codigo": 103,
+   "descricao": "(2X) - SINAL (40%) - 07 DDF (60%)",
+   "parcelas": [
+    [
+     "SINAL",
+     40.0
+    ],
+    [
+     7,
+     60.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -3.5
+  },
+  {
+   "codigo": 104,
+   "descricao": "(2X) - SINAL (60%) - 30 DDF (40%)",
+   "parcelas": [
+    [
+     "SINAL",
+     60.0
+    ],
+    [
+     30,
+     40.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -3
+  },
+  {
+   "codigo": 105,
+   "descricao": "(2X) - SINAL (50%) - 30 DDF (50%)",
+   "parcelas": [
+    [
+     "SINAL",
+     50.0
+    ],
+    [
+     30,
+     50.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -2.5
+  },
+  {
+   "codigo": 106,
+   "descricao": "(1X) - 07 DDF",
+   "parcelas": [
+    [
+     7,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -2
+  },
+  {
+   "codigo": 107,
+   "descricao": "(2X) - SINAL (40%) - 30 DDF (60%)",
+   "parcelas": [
+    [
+     "SINAL",
+     40.0
+    ],
+    [
+     30,
+     60.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -2
+  },
+  {
+   "codigo": 108,
+   "descricao": "(1X) - 15 DDF",
+   "parcelas": [
+    [
+     15,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -1.5
+  },
+  {
+   "codigo": 109,
+   "descricao": "(3X) - SINAL (40%) - 28 DDF (30%) - 56 DDF (30%)",
+   "parcelas": [
+    [
+     "SINAL",
+     40.0
+    ],
+    [
+     28,
+     30.0
+    ],
+    [
+     56,
+     30.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -1.5
+  },
+  {
+   "codigo": 110,
+   "descricao": "(3X) - SINAL (40%) - 30 DDF (30%) - 60 DDF (30%)",
+   "parcelas": [
+    [
+     "SINAL",
+     40.0
+    ],
+    [
+     30,
+     30.0
+    ],
+    [
+     60,
+     30.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -1
+  },
+  {
+   "codigo": 111,
+   "descricao": "(2X) - 07 DDF - 30 DDF",
+   "parcelas": [
+    [
+     7,
+     50.0
+    ],
+    [
+     30,
+     50.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -1
+  },
+  {
+   "codigo": 112,
+   "descricao": "(4X) - SINAL (25%) - 07 DDF (25%) - 30 DDF (25%) - 60 DDF (25%)",
+   "parcelas": [
+    [
+     "SINAL",
+     25.0
+    ],
+    [
+     7,
+     25.0
+    ],
+    [
+     30,
+     25.0
+    ],
+    [
+     60,
+     25.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -1
+  },
+  {
+   "codigo": 113,
+   "descricao": "(1X) - 21 DDF",
+   "parcelas": [
+    [
+     21,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -1
+  },
+  {
+   "codigo": 114,
+   "descricao": "(3X) - SINAL - 30 DDF - 60 DDF",
+   "parcelas": [
+    [
+     "SINAL",
+     33.33
+    ],
+    [
+     30,
+     33.33
+    ],
+    [
+     60,
+     33.33
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -0.75
+  },
+  {
+   "codigo": 115,
+   "descricao": "(1X) - 28 DDF",
+   "parcelas": [
+    [
+     28,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 0
+  },
+  {
+   "codigo": 116,
+   "descricao": "(3X) - 14 DDF - 28 DDF - 42 DDF",
+   "parcelas": [
+    [
+     14,
+     33.33
+    ],
+    [
+     28,
+     33.33
+    ],
+    [
+     42,
+     33.33
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 0
+  },
+  {
+   "codigo": 117,
+   "descricao": "(1X) - 30 DDF",
+   "parcelas": [
+    [
+     30,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 0
+  },
+  {
+   "codigo": 118,
+   "descricao": "(3X) - SINAL (20%) - 30 DDF (40%) - 60 DDF (40%)",
+   "parcelas": [
+    [
+     "SINAL",
+     20.0
+    ],
+    [
+     30,
+     40.0
+    ],
+    [
+     60,
+     40.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 0
+  },
+  {
+   "codigo": 119,
+   "descricao": "(1X) - 35 DDF",
+   "parcelas": [
+    [
+     35,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 0.5
+  },
+  {
+   "codigo": 120,
+   "descricao": "(1X) - 45 DDF",
+   "parcelas": [
+    [
+     45,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 1.5
+  },
+  {
+   "codigo": 121,
+   "descricao": "(2X) - 30 DDF - 60 DDF",
+   "parcelas": [
+    [
+     30,
+     50.0
+    ],
+    [
+     60,
+     50.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 1.5
+  },
+  {
+   "codigo": 122,
+   "descricao": "(4X) - 07 DDF - 30 DDF - 60 DDF - 90 DDF",
+   "parcelas": [
+    [
+     7,
+     25.0
+    ],
+    [
+     30,
+     25.0
+    ],
+    [
+     60,
+     25.0
+    ],
+    [
+     90,
+     25.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 1.5
+  },
+  {
+   "codigo": 123,
+   "descricao": "(1X) - 60 DDF",
+   "parcelas": [
+    [
+     60,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 3
+  },
+  {
+   "codigo": 124,
+   "descricao": "(3X) - 30 DDF - 60 DDF - 90 DDF",
+   "parcelas": [
+    [
+     30,
+     33.33
+    ],
+    [
+     60,
+     33.33
+    ],
+    [
+     90,
+     33.33
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 3
+  },
+  {
+   "codigo": 125,
+   "descricao": "(6X) - 07 DDF - 30 DDF - 60 DDF - 90 DDF - 120 DDF - 150 DDF",
+   "parcelas": [
+    [
+     7,
+     16.66
+    ],
+    [
+     30,
+     16.66
+    ],
+    [
+     60,
+     16.66
+    ],
+    [
+     90,
+     16.66
+    ],
+    [
+     120,
+     16.66
+    ],
+    [
+     150,
+     16.66
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 4.5
+  },
+  {
+   "codigo": 126,
+   "descricao": "(1X) - 90 DDF",
+   "parcelas": [
+    [
+     90,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 6
+  },
+  {
+   "codigo": 127,
+   "descricao": "(1X) - 120 DDF",
+   "parcelas": [
+    [
+     120,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 9
+  },
+  {
+   "codigo": 128,
+   "descricao": "ANTECIPADO",
+   "parcelas": [
+    [
+     "SINAL",
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -5
+  },
+  {
+   "codigo": 129,
+   "descricao": "À VISTA",
+   "parcelas": [
+    [
+     0,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "Pagamento no faturamento: prazo 0 (no ERP a parcela está cadastrada com 7 dias).",
+   "percentual_erp": -3
+  },
+  {
+   "codigo": 130,
+   "descricao": "PRIME - (1X) - 90 DDF",
+   "parcelas": [
+    [
+     90,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "Parcelas não constam no relatório do ERP; usado 90 DDF da descrição.",
+   "percentual_erp": null
+  },
+  {
+   "codigo": 132,
+   "descricao": "(2X) - SINAL (40%) - 45 DDF (60%)",
+   "parcelas": [
+    [
+     "SINAL",
+     40.0
+    ],
+    [
+     45,
+     60.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -1
+  },
+  {
+   "codigo": 134,
+   "descricao": "(3X) - 30 DDF - 45 DDF - 60 DDF",
+   "parcelas": [
+    [
+     30,
+     33.33
+    ],
+    [
+     45,
+     33.33
+    ],
+    [
+     60,
+     33.33
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": null
+  },
+  {
+   "codigo": 135,
+   "descricao": "(2X) - 45 DDF - 90 DDF",
+   "parcelas": [
+    [
+     45,
+     50.0
+    ],
+    [
+     90,
+     50.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": null
+  },
+  {
+   "codigo": 137,
+   "descricao": "(1X) - 75 DDF",
+   "parcelas": [
+    [
+     75,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": null
+  },
+  {
+   "codigo": 138,
+   "descricao": "(2X) - 15 DDF - 30 DDF",
+   "parcelas": [
+    [
+     15,
+     50.0
+    ],
+    [
+     30,
+     50.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": -1
+  },
+  {
+   "codigo": 139,
+   "descricao": "(3X) - SINAL (30%) - 30 DDF (35%) - 60 DDF (35%)",
+   "parcelas": [
+    [
+     "SINAL",
+     30.0
+    ],
+    [
+     30,
+     35.0
+    ],
+    [
+     60,
+     35.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": 0
+  },
+  {
+   "codigo": 140,
+   "descricao": "(1X) - 33 DDF",
+   "parcelas": [
+    [
+     33,
+     100.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": null
+  },
+  {
+   "codigo": 141,
+   "descricao": "(2X) - SINAL (20%) - 60 DDF (80%)",
+   "parcelas": [
+    [
+     "SINAL",
+     20.0
+    ],
+    [
+     60,
+     80.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": null
+  },
+  {
+   "codigo": 142,
+   "descricao": "(3X) - SINAL (80%) - 30 UTEIS DDF (05%) - 60 UTEIS DDF (15%)",
+   "parcelas": [
+    [
+     "SINAL",
+     80.0
+    ],
+    [
+     44,
+     5.0
+    ],
+    [
+     88,
+     15.0
+    ]
+   ],
+   "ativa": true,
+   "obs": "Prazos em dias corridos equivalentes aos dias úteis (44 e 88).",
+   "percentual_erp": -3
+  },
+  {
+   "codigo": 144,
+   "descricao": "(6X) - SINAL - 7DDF - 30DDF - 60DDF - 90DDF - 120DDF",
+   "parcelas": [
+    [
+     "SINAL",
+     16.66
+    ],
+    [
+     7,
+     16.66
+    ],
+    [
+     30,
+     16.66
+    ],
+    [
+     60,
+     16.66
+    ],
+    [
+     90,
+     16.66
+    ],
+    [
+     120,
+     16.66
+    ]
+   ],
+   "ativa": true,
+   "obs": "",
+   "percentual_erp": null
+  }
+ ]
+}
