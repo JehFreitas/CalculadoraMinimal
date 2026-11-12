@@ -166,16 +166,19 @@ def parametros_comerciais(pid):
                            "Parcelas": descontos.parcelas_texto(c["parcelas"]),
                            "Prazo médio": round(float(pm or 0), 1), "Calculado (%)": round(float(calc), 2),
                            "Aplicado (%)": float(ap), "No Focco (%)": c.get("percentual_erp"),
+                           "Exclusiva de cliente": c.get("exclusiva_cliente", ""),
                            "Situação": descontos.situacao_condicao(c, com)[1],
                            "Observação": c.get("obs", "")})
-        st.caption("O vendedor só vê as condições com situação Disponível: ativas, cadastradas no Focco "
-                   "e com o % do Focco igual ao calculado. As demais ele pede ao ADM Comercial.")
+        st.caption("O vendedor só vê as condições com situação Disponível: ativas, não exclusivas de cliente "
+                   "e com o % do Focco igual ao calculado (sem política no Focco = 0%). "
+                   "As demais ele pede ao ADM Comercial.")
         df = st.data_editor(pd.DataFrame(linhas), num_rows="dynamic", hide_index=True, key=f"{pid}_c_cond",
                             disabled=["Prazo médio", "Calculado (%)", "Aplicado (%)", "Situação"])
         novo["condicoes"] = [
             dict(codigo=int(r["Código"]), descricao=str(r["Descrição"]).strip(),
                  parcelas=descontos.parcelas_de_texto(r["Parcelas"]), ativa=bool(r["Ativa"]),
                  percentual_erp=None if pd.isna(r["No Focco (%)"]) else float(r["No Focco (%)"]),
+                 exclusiva_cliente="" if pd.isna(r["Exclusiva de cliente"]) else str(r["Exclusiva de cliente"]).strip(),
                  obs="" if pd.isna(r["Observação"]) else str(r["Observação"]))
             for _, r in df.iterrows() if not pd.isna(r["Código"]) and str(r["Descrição"]).strip()]
 

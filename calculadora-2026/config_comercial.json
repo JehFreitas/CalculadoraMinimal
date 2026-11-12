@@ -1,5 +1,5 @@
 {
- "_leia_me": "Condições de pagamento e limites da política de descontos. O percentual de cada condição é calculado pelo prazo médio de recebimento, como na planilha Revisão Acréscimos e Descontos (aba Revisão do Cálculo). percentual_erp: % cadastrado no Focco (null = não confirmado). A condição só aparece para o vendedor se estiver ativa e o % do Focco for igual ao calculado.",
+ "_leia_me": "Condições de pagamento e limites da política de descontos. O % de cada condição é calculado pelo prazo médio de recebimento, como na planilha Revisão Acréscimos e Descontos (aba Revisão do Cálculo). percentual_erp: % de desconto (−) ou acréscimo (+) cadastrado nas políticas do Focco; sem política = 0. exclusiva_cliente: condição exclusiva de um cliente no Focco (não aparece para o vendedor). A condição só aparece se estiver ativa, não for exclusiva e o % do Focco for igual ao calculado.",
  "calculo_condicao": {
   "custo_capital_mensal": 3.0,
   "tempo_fabricacao_dias": 30,
@@ -46,7 +46,8 @@
    ],
    "ativa": true,
    "obs": "No ERP as parcelas são 30 a 180 DDF, diferente da descrição.",
-   "percentual_erp": null
+   "percentual_erp": 0,
+   "exclusiva_cliente": "2592 VIP ADM"
   },
   {
    "codigo": 80,
@@ -67,7 +68,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -1.5
+   "percentual_erp": -1.5,
+   "exclusiva_cliente": "3275 TABLO REVENDA"
   },
   {
    "codigo": 97,
@@ -104,7 +106,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": null
+   "percentual_erp": 0,
+   "exclusiva_cliente": "2592 VIP ADM"
   },
   {
    "codigo": 103,
@@ -121,7 +124,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -3.5
+   "percentual_erp": -3.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 104,
@@ -138,7 +142,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -3
+   "percentual_erp": -3,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 105,
@@ -155,7 +160,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -2.5
+   "percentual_erp": -2.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 106,
@@ -168,7 +174,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -2
+   "percentual_erp": -2,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 107,
@@ -185,7 +192,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -2
+   "percentual_erp": -2,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 108,
@@ -198,7 +206,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -1.5
+   "percentual_erp": -1.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 109,
@@ -219,7 +228,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -1.5
+   "percentual_erp": -1.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 110,
@@ -240,7 +250,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -1
+   "percentual_erp": -1,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 111,
@@ -257,7 +268,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -1
+   "percentual_erp": -1,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 112,
@@ -282,7 +294,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -1
+   "percentual_erp": -1,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 113,
@@ -295,7 +308,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -1
+   "percentual_erp": -1,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 114,
@@ -316,7 +330,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -0.75
+   "percentual_erp": -0.75,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 115,
@@ -329,7 +344,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 0
+   "percentual_erp": 0,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 116,
@@ -350,7 +366,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 0
+   "percentual_erp": 0,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 117,
@@ -363,7 +380,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 0
+   "percentual_erp": 0,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 118,
@@ -384,7 +402,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 0
+   "percentual_erp": 0,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 119,
@@ -397,7 +416,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 0.5
+   "percentual_erp": 0.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 120,
@@ -410,7 +430,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 1.5
+   "percentual_erp": 1.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 121,
@@ -427,7 +448,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 1.5
+   "percentual_erp": 1.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 122,
@@ -452,7 +474,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 1.5
+   "percentual_erp": 1.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 123,
@@ -465,7 +488,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 3
+   "percentual_erp": 3,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 124,
@@ -486,7 +510,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 3
+   "percentual_erp": 3,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 125,
@@ -519,7 +544,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 4.5
+   "percentual_erp": 4.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 126,
@@ -532,7 +558,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 6
+   "percentual_erp": 6,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 127,
@@ -545,7 +572,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 9
+   "percentual_erp": 9,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 128,
@@ -558,7 +586,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -5
+   "percentual_erp": -5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 129,
@@ -571,7 +600,8 @@
    ],
    "ativa": true,
    "obs": "Pagamento no faturamento: prazo 0 (no ERP a parcela está cadastrada com 7 dias).",
-   "percentual_erp": -3
+   "percentual_erp": -3,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 130,
@@ -584,7 +614,8 @@
    ],
    "ativa": true,
    "obs": "Parcelas não constam no relatório do ERP; usado 90 DDF da descrição.",
-   "percentual_erp": null
+   "percentual_erp": 0,
+   "exclusiva_cliente": "2113 Sociedade Beneficente Israelita"
   },
   {
    "codigo": 132,
@@ -601,7 +632,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -1
+   "percentual_erp": -1,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 134,
@@ -622,7 +654,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": null
+   "percentual_erp": 1.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 135,
@@ -639,7 +672,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": null
+   "percentual_erp": 4,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 137,
@@ -652,7 +686,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": null
+   "percentual_erp": 4.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 138,
@@ -669,7 +704,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": -1
+   "percentual_erp": -1,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 139,
@@ -690,7 +726,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": 0
+   "percentual_erp": 0,
+   "exclusiva_cliente": "5563 AMBIENTA MOBILIARIO"
   },
   {
    "codigo": 140,
@@ -703,7 +740,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": null
+   "percentual_erp": 0,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 141,
@@ -720,7 +758,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": null
+   "percentual_erp": 1.5,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 142,
@@ -741,7 +780,8 @@
    ],
    "ativa": true,
    "obs": "Prazos em dias corridos equivalentes aos dias úteis (44 e 88).",
-   "percentual_erp": -3
+   "percentual_erp": -3,
+   "exclusiva_cliente": ""
   },
   {
    "codigo": 144,
@@ -774,7 +814,8 @@
    ],
    "ativa": true,
    "obs": "",
-   "percentual_erp": null
+   "percentual_erp": 1.75,
+   "exclusiva_cliente": ""
   }
  ]
 }
