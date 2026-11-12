@@ -50,6 +50,24 @@ with st.sidebar:
     senha_cfg = comum.senha_adm()
     if comum.adm_logado():
         st.success("Adm Comercial conectado")
+        with st.expander("🔌 Testar integrações"):
+            st.caption("Verifica o acesso à planilha sem gravar nada.")
+            if st.button("Testar planilha"):
+                import servicos
+                for ok, msg in servicos.testar_integracao(st):
+                    (st.success if ok else st.error)(msg)
+            st.caption("Envia um e-mail de teste só para o remetente configurado.")
+            if st.button("Enviar e-mail de teste"):
+                import servicos
+                em = servicos._secao(st, "email") or {}
+                if not em.get("remetente"):
+                    st.error("E-mail não configurado (secrets [email]).")
+                else:
+                    ok, msg = servicos.enviar_email(
+                        st, "Teste da Calculadora Comercial",
+                        "<p>E-mail de teste enviado pela área do Adm da Calculadora Comercial.</p>", [],
+                        destinatarios=[em["remetente"]])
+                    (st.success if ok else st.error)(msg if not ok else f"E-mail de teste enviado para {em['remetente']}.")
         if st.button("Sair da área do Adm"):
             st.session_state.adm_ok = False
             st.rerun()

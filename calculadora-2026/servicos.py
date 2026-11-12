@@ -124,13 +124,54 @@ def linha_csv(valores, tipo="nfe"):
     return buf.getvalue().encode("utf-8-sig")
 
 
+def _localizar_planilha(sp, h):
+    """
+    Retorna (url_do_drive, id_do_arquivo, erro).
+    [sharepoint] drive_id + file_path, ou
+                 site_hostname + site_path + file_path. Neste caso, se o primeiro
+                 trecho de file_path for o nome de uma biblioteca do site
+                 (ex.: "Comercial/Calculadora/arquivo.xlsx"), usa essa biblioteca.
+    """
+    caminho = sp["file_path"].strip("/")
+    if sp.get("drive_id"):
+        drives = [(f"{GRAPH}/drives/{sp['drive_id']}", caminho)]
+    else:
+        host = sp["site_hostname"]
+        path = "/" + sp["site_path"].strip("/")
+        site = requests.get(f"{GRAPH}/sites/{host}:{path}", headers=h, timeout=TIMEOUT)
+        if site.status_code != 200:
+            return None, None, f"Site do SharePoint não encontrado ({site.status_code})."
+        sid = site.json()["id"]
+        drives = []
+        primeiro, _, resto = caminho.partition("/")
+        lista = requests.get(f"{GRAPH}/sites/{sid}/drives", headers=h, timeout=TIMEOUT)
+        if lista.status_code == 200 and resto:
+            for dr in lista.json().get("value", []):
+                if dr.get("name", "").lower() == primeiro.lower():
+                    drives.append((f"{GRAPH}/drives/{dr['id']}", resto))
+        drives.append((f"{GRAPH}/sites/{sid}/drive", caminho))
+    ultimo = None
+    for drive, rel in drives:
+        arq = requests.get(f"{drive}/root:/{quote(rel)}", headers=h, timeout=TIMEOUT)
+        if arq.status_code == 200:
+            return drive, arq.json()["id"], None
+        ultimo = arq.status_code
+    return None, None, f"Planilha não encontrada ({ultimo}). Confira file_path nos Secrets."
+
+
+def _config_sharepoint(st):
+    sp = _secao(st, "sharepoint") or {}
+    if sp.get("site") and not sp.get("site_hostname"):          # formato "host:/sites/Nome"
+        host, _, path = sp["site"].partition(":")
+        sp["site_hostname"], sp["site_path"] = host, path
+    if not sp.get("file_path") or not (sp.get("drive_id") or (sp.get("site_hostname") and sp.get("site_path"))):
+        return None
+    return sp
+
+
 def registrar_planilha(st, valores, token=None, tipo="nfe"):
-    """
-    [sharepoint] drive_id + file_path   (biblioteca específica, recomendado), ou
-                 site_hostname + site_path + file_path (biblioteca padrão do site)
-    """
-    sp = _secao(st, "sharepoint")
-    if not sp or not sp.get("file_path") or not (sp.get("drive_id") or (sp.get("site_hostname") and sp.get("site_path"))):
+    sp = _config_sharepoint(st)
+    if not sp:
         return False, "Planilha ainda não configurada (secrets [sharepoint])."
     if token is None:
         token, erro = _token_microsoft(st)
@@ -138,30 +179,55 @@ def registrar_planilha(st, valores, token=None, tipo="nfe"):
             return False, erro
     h = {"Authorization": f"Bearer {token}"}
     try:
-        if sp.get("drive_id"):
-            drive = f"{GRAPH}/drives/{sp['drive_id']}"
-        else:
-            site = requests.get(f"{GRAPH}/sites/{sp['site_hostname']}:{sp['site_path']}",
-                                headers=h, timeout=TIMEOUT)
-            if site.status_code != 200:
-                return False, f"Site do SharePoint não encontrado ({site.status_code})."
-            drive = f"{GRAPH}/sites/{site.json()['id']}/drive"
-        arq = requests.get(f"{drive}/root:/{quote(sp['file_path'])}", headers=h, timeout=TIMEOUT)
-        if arq.status_code != 200:
-            return False, f"Planilha não encontrada ({arq.status_code})."
+        drive, item, erro = _localizar_planilha(sp, h)
+        if erro:
+            return False, erro
         tabela = sp.get(f"tabela_{tipo}") or TABELAS[tipo][0]
-        add = requests.post(f"{drive}/items/{arq.json()['id']}/workbook/tables/{tabela}/rows/add",
+        add = requests.post(f"{drive}/items/{item}/workbook/tables/{tabela}/rows/add",
                             headers=h, json={"values": [valores]}, timeout=TIMEOUT)
         if add.status_code in (200, 201):
             return True, "Simulação salva na planilha."
-        return False, f"Não foi possível incluir a linha na planilha ({add.status_code})."
+        return False, f"Não foi possível incluir a linha na planilha ({add.status_code}): {add.text[:150]}"
     except requests.RequestException as exc:
         return False, f"Falha de conexão com o SharePoint: {exc}"
 
 
-def enviar_email(st, assunto, corpo_html, anexos, token=None):
+def testar_integracao(st):
+    """Verificação sem gravar nada: login do aplicativo, planilha e tabelas. Lista de (ok, mensagem)."""
+    res = []
+    token, erro = _token_microsoft(st)
+    if not token:
+        return [(False, erro)]
+    res.append((True, "Login do aplicativo no Microsoft 365: ok."))
+    sp = _config_sharepoint(st)
+    if not sp:
+        res.append((False, "Planilha não configurada (secrets [sharepoint])."))
+    else:
+        h = {"Authorization": f"Bearer {token}"}
+        try:
+            drive, item, erro = _localizar_planilha(sp, h)
+            if erro:
+                res.append((False, erro))
+            else:
+                res.append((True, "Planilha encontrada."))
+                t = requests.get(f"{drive}/items/{item}/workbook/tables", headers=h, timeout=TIMEOUT)
+                nomes = [x.get("name") for x in t.json().get("value", [])] if t.status_code == 200 else []
+                for tipo, (padrao, _) in TABELAS.items():
+                    nome = sp.get(f"tabela_{tipo}") or padrao
+                    res.append((nome in nomes, f"Tabela {nome}: " + ("ok." if nome in nomes else "não encontrada.")))
+        except requests.RequestException as exc:
+            res.append((False, f"Falha de conexão com o SharePoint: {exc}"))
+    em = _secao(st, "email")
+    res.append((bool(em and em.get("remetente") and em.get("destinatarios")),
+                "E-mail: " + (f"remetente {em['remetente']}." if em and em.get("remetente") else "não configurado (secrets [email]).")))
+    return res
+
+
+def enviar_email(st, assunto, corpo_html, anexos, token=None, destinatarios=None):
     """anexos: lista de (nome_arquivo, bytes)."""
     em = _secao(st, "email")
+    if em and destinatarios:
+        em["destinatarios"] = destinatarios
     if not em or not em.get("remetente") or not em.get("destinatarios"):
         return False, "Envio de e-mail ainda não configurado (secrets [email])."
     if token is None:
