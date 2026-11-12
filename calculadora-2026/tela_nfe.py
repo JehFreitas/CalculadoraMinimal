@@ -324,14 +324,19 @@ def render(ano):
         cm = com.get("comissao") or {}
         tem_tab = ss.get(k("equipe")) in cm.get("equipes", [])
         if tem_tab:
-            c1.selectbox("Divisão de venda *", list(cm["divisoes"].keys()), index=None, key=k("divisao_venda"),
-                         placeholder="Selecione")
+            c1.selectbox("Divisão de venda" + (" *" if ss.get(k("modo_pol")) == MODO_COM else " (opcional)"),
+                         list(cm["divisoes"].keys()), index=None, key=k("divisao_venda"),
+                         placeholder="Selecione",
+                         help="Opcional. Informada, a calculadora mostra a comissão estimada. "
+                              "Obrigatória para escolher pela comissão.")
         faixas = descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda")))
         modos = [MODO_PCT, MODO_ALVO] + ([MODO_COM] if tem_tab else [])
         if ss.get(k("modo_pol")) not in modos:
             ss[k("modo_pol")] = None
         c2.radio("Desconto da política *", modos, index=None, key=k("modo_pol"))
         limite = limite_efetivo(ss.get(k("equipe")), faixas)
+        if ss.get(k("modo_pol")) == MODO_COM and not faixas:
+            st.caption("Informe a divisão de venda para escolher a comissão.")
         if ss.get(k("modo_pol")) == MODO_COM and faixas:
             st.selectbox("Comissão desejada *", list(range(len(faixas))), index=None, key=k("faixa"),
                          format_func=lambda i: descontos.rotulo_faixa(faixas, i), placeholder="Selecione",
@@ -434,7 +439,7 @@ def render(ano):
         elif ss.get(k("modo_pol")) == MODO_COM and ss.get(k("faixa")) is None:
             f.append("Comissão desejada")
         cm_ = com.get("comissao") or {}
-        if ss.get(k("equipe")) in cm_.get("equipes", []) and not ss.get(k("divisao_venda")):
+        if ss.get(k("modo_pol")) == MODO_COM and not ss.get(k("divisao_venda")):
             f.append("Divisão de venda")
         lim = limite_efetivo(ss.get(k("equipe")),
                              descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda"))))
