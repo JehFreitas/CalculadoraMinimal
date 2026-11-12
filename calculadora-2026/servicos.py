@@ -103,6 +103,7 @@ COLUNAS_NFE = [
     "Resultado frete/montagem",
     "Total Itens (tabela)", "Condição de pagamento", "% condição", "Equipe", "Modo da política",
     "% política", "Valor final desejado",
+    "Divisão produto/serviço", "Pedido de serviço", "Desconto aos itens (produtos)", "Total pedido de produtos",
 ]
 
 COLUNAS_VA = [

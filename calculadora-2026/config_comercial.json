@@ -858,5 +858,6 @@
    "exclusiva_cliente": "",
    "usar_percentual_erp": true
   }
- ]
+ ],
+ "divisao_servico_pct": 40
 }

@@ -144,6 +144,10 @@ def parametros_comerciais(pid):
         par["arredondamento"] = st.number_input(
             "Arredondar para múltiplos de (%)", value=float(par["arredondamento"]), step=0.25, key=f"{pid}_c_arr")
 
+        novo["divisao_servico_pct"] = st.number_input(
+            "Divisão: % do pedido de serviço", value=float(novo.get("divisao_servico_pct", 40)), step=1.0,
+            key=f"{pid}_c_serv", help="Parte do Valor Total que vai para o pedido de serviço. O restante fica no de produtos.")
+
         st.subheader("Limite da política por equipe (%)")
         lim = pd.DataFrame({"Equipe": list(novo["limites_politica"].keys()),
                             "Limite (%)": list(novo["limites_politica"].values())})
@@ -343,6 +347,12 @@ def render(ano):
                    + ".")
         if sem_cobranca:
             st.caption("SP Capital: frete e montagem não são cobrados do cliente.")
+        if ano == "2026":
+            pct_s = com.get("divisao_servico_pct", 40)
+            st.checkbox(f"Dividir em pedido de produtos ({100 - pct_s:g}%) e pedido de serviço ({pct_s:g}%)",
+                        key=k("dividir"),
+                        help="O orçamento é montado normalmente. Depois o ADM Comercial cria o pedido de "
+                             "serviço e ajusta o pedido de produtos com os valores calculados aqui.")
 
     # ---------------- Validação e cálculo ----------------
     def faltando():
@@ -402,6 +412,7 @@ def render(ano):
             km_ida_volta=(ss.get(k("km_ida_volta")) or 0) if not sp_capital else 0,
             frete_aplicacao=PEDIDO,
             montagem_aplicacao=PEDIDO,
+            dividir=bool(ss.get(k("dividir"))) and ano == "2026",
         )
 
     def meta_atual():
@@ -439,6 +450,11 @@ def render(ano):
                      cond_rotulo=f"{cond['codigo']} - {cond['descricao']}", politica_pct=pol,
                      limite=limites[e["equipe"]], aviso_politica=aviso_pol,
                      erp=descontos.lancamentos_erp(r, pol, com))
+            if e["dividir"]:
+                dv = descontos.dividir(r, com, cfg["impostos"]["ipi"], pol)
+                prop = dv["total_produtos"] / r["total_nf"] if r["total_nf"] else 0
+                dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
+                r["divisao"] = dv
             cons = ss.get(k("consulta")) or {}
             mesmo = cons.get("ok") and cons.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj"), ""))
             meta = dict(meta_atual(), data=ss.get(k("data")),
@@ -531,6 +547,31 @@ def render(ano):
                          else f"{titulo}: {formatar(valor)}")))
         st.caption("O ERP arredonda item a item: o Valor Total pode diferir alguns centavos.")
 
+    dv = r.get("divisao")
+    linhas_div = []
+    if dv:
+        linhas_div = [(f"1. Pedido de serviço ({float(dv['pct_servico']):g}% do Valor Total) — sem ICMS, IPI, "
+                       "acréscimos ou descontos", dv["servico"]),
+                      ("2. Pedido de produtos: retirar o acréscimo MONTAGEM", dv["retirar_montagem"])]
+        if dv["retirar_difal"]:
+            linhas_div.append(("   retirar o acréscimo DIFAL", dv["retirar_difal"]))
+        if dv["retirar_fcp"]:
+            linhas_div.append(("   retirar o acréscimo FUNDO DE COMBATE À POBREZA", dv["retirar_fcp"]))
+        linhas_div += [("   manter frete, condição de pagamento e política", None),
+                       ("   incluir desconto em valor, aplicável aos itens", dv["desconto_itens"]),
+                       ("   IPI do pedido de produtos", dv["ipi_produtos"]),
+                       (f"   Valor Total do pedido de produtos ({100 - float(dv['pct_servico']):g}%)", dv["total_produtos"])]
+        with st.container(border=True):
+            st.subheader("Divisão em pedido de produtos e de serviço (ADM Comercial)")
+            if dv["negativo"]:
+                st.warning("Os produtos e o frete, sem os acréscimos, ficam abaixo da parte de produtos: "
+                           "o pedido de produtos precisaria de acréscimo, não de desconto. Confira com o ADM.")
+            for titulo, valor in linhas_div:
+                st.write(md(titulo.strip() if valor is None else f"{titulo.strip()}: {formatar(valor)}"))
+            st.caption("Montagem, DIFAL e FCP ficam cobertos pelo pedido de serviço. "
+                       + ("O desconto já considera que a política do ERP incide sobre o que é lançado aos itens."
+                          if com.get("politica_desconta_acrescimos_aos_itens") else ""))
+
     if desatualizado:
         return
 
@@ -552,10 +593,17 @@ def render(ano):
         blocos = [("Condição e desconto", linhas_desc),
                   ("Resumo da Nota Fiscal (NFe)", linhas_nf),
                   ("Lançar no orçamento (ERP)", [(t, v) for t, v in linhas_erp if v is not None])]
+        if dv:
+            blocos.append(("Divisão em pedido de produtos e de serviço",
+                           [(t.strip(), v) for t, v in linhas_div if v is not None]))
         notas = []
         if admin:
             if sem_ie:
-                blocos.append(("Guias", [("Guia DIFAL", r["difal"]), ("Guia FCP", r["fcp"])]))
+                if dv:
+                    blocos.append(("Guias (sobre o pedido de produtos)",
+                                   [("Guia DIFAL", dv["guia_difal"]), ("Guia FCP", dv["guia_fcp"])]))
+                else:
+                    blocos.append(("Guias", [("Guia DIFAL", r["difal"]), ("Guia FCP", r["fcp"])]))
             blocos.append(("Custos e conferência", [
                 ("A pagar à transportadora", r["frete_custo"]),
                 ("A pagar à montadora", r["montagem_custo"]),
@@ -601,6 +649,8 @@ def render(ano):
             n(r["total_tabela"]), r["cond_rotulo"], n(r["cond_pct"]), e["equipe"],
             "Valor final" if e["modo_pol"] == MODO_ALVO else "Percentual",
             round(float(r["politica_pct"]), 4), n(e["alvo"]) if e.get("alvo") else "",
+            "Sim" if dv else "Não", n(dv["servico"]) if dv else "", n(dv["desconto_itens"]) if dv else "",
+            n(dv["total_produtos"]) if dv else "",
         ]
         pdf_adm = pdf(True)
         assunto = f"Simulação {versao} · {meta['orcamento']} · {meta['cliente']} · {meta['vendedor']}"
