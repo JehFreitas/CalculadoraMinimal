@@ -324,6 +324,20 @@ def render(ano):
                             format="%.2f", key=k("alvo"),
                             help="A calculadora encontra o % da política. Frete, montagem e DIFAL/FCP "
                                  "não são reduzidos para caber no valor, e o limite da equipe é respeitado.")
+        st.checkbox("Alguns itens têm desconto diferente", key=k("tem_exc"),
+                    help="Informe só os itens que fogem da regra. Os demais levam o desconto acima.")
+        if ss.get(k("tem_exc")):
+            st.caption("Valor do item = valor unitário de tabela × quantidade, sem desconto. "
+                       "Os itens que não estão na lista levam o desconto padrão acima.")
+            base_exc = pd.DataFrame({"Item": pd.Series(dtype="str"),
+                                     "Valor de tabela (R$)": pd.Series(dtype="float"),
+                                     "Desconto (%)": pd.Series(dtype="float")})
+            st.data_editor(base_exc, num_rows="dynamic", hide_index=True, key=k("exc_editor"),
+                           column_config={
+                               "Item": st.column_config.TextColumn("Item (nº ou descrição)"),
+                               "Valor de tabela (R$)": st.column_config.NumberColumn(min_value=0.0, format="%.2f"),
+                               "Desconto (%)": st.column_config.NumberColumn(min_value=0.0, max_value=100.0,
+                                                                              format="%.4f")})
 
     with st.container(border=True):
         st.subheader("4. Frete e montagem")
@@ -354,6 +368,25 @@ def render(ano):
                         help="O orçamento é montado normalmente. Depois o ADM Comercial cria o pedido de "
                              "serviço e ajusta o pedido de produtos com os valores calculados aqui.")
 
+    def excecoes_atuais():
+        if not ss.get(k("tem_exc")):
+            return []
+        est = ss.get(k("exc_editor")) or {}
+        linhas = [dict(l) for l in est.get("added_rows", [])]
+        for i, mud in (est.get("edited_rows") or {}).items():
+            if int(i) < len(linhas):
+                linhas[int(i)].update(mud)
+        apagar = set(est.get("deleted_rows") or [])
+        out = []
+        for i, l in enumerate(linhas):
+            if i in apagar:
+                continue
+            v, pct_i = l.get("Valor de tabela (R$)"), l.get("Desconto (%)")
+            if v is None and pct_i is None and not l.get("Item"):
+                continue
+            out.append(dict(item=str(l.get("Item") or f"Item {i + 1}"), valor=v, pct=pct_i))
+        return out
+
     # ---------------- Validação e cálculo ----------------
     def faltando():
         f = []
@@ -378,6 +411,16 @@ def render(ano):
         elif ss.get(k("modo_pol")) == MODO_ALVO and not ss.get(k("alvo")):
             f.append("Valor total desejado")
         lim = limites.get(ss.get(k("equipe")))
+        exc = excecoes_atuais()
+        if ss.get(k("tem_exc")):
+            if not exc:
+                f.append("Itens com desconto diferente (ou desmarque a opção)")
+            if any(x["valor"] is None or x["pct"] is None for x in exc):
+                f.append("Valor e desconto de cada item com desconto diferente")
+            if lim is not None and any(x["pct"] is not None and x["pct"] > lim for x in exc):
+                f.append(f"Desconto de cada item dentro do limite da equipe ({lim:g}%)".replace(".", ","))
+            if sum((x["valor"] or 0) for x in exc) > (ss.get(k("total_tabela")) or 0) + 0.005:
+                f.append("Soma dos itens com desconto diferente até o Total Itens")
         if (ss.get(k("modo_pol")) == MODO_PCT and lim is not None and ss.get(k("politica")) is not None
                 and ss.get(k("politica")) > lim):
             f.append(f"Desconto da política dentro do limite da equipe ({lim:g}%)".replace(".", ","))
@@ -401,6 +444,7 @@ def render(ano):
             equipe=ss.get(k("equipe")), modo_pol=modo,
             politica=ss.get(k("politica")) if modo == MODO_PCT else None,
             alvo=ss.get(k("alvo")) if modo == MODO_ALVO else None,
+            excecoes=excecoes_atuais(),
             estado=ss.get(k("estado")),
             cidade=ss.get(k("cidade")),
             horario="Fora do comercial" if sp_capital else None,   # SP Capital: custo a 4%
@@ -445,13 +489,15 @@ def render(ano):
             pol, r, aviso_pol = descontos.resolver(
                 e, cfg, motor, e["total_tabela"], cond_pct, limites[e["equipe"]],
                 "percentual" if e["modo_pol"] == MODO_PCT else "valor_final",
-                politica=e["politica"], alvo=e["alvo"])
+                politica=e["politica"], alvo=e["alvo"],
+                excecoes=[(x["valor"], x["pct"]) for x in e["excecoes"]])
+            pol_ef = descontos.politica_efetiva(e["total_tabela"], cond_pct, r["valor_produtos"])
             r.update(total_tabela=calculo.d(e["total_tabela"]), cond_pct=cond_pct, cond_prazo=pm,
                      cond_rotulo=f"{cond['codigo']} - {cond['descricao']}", politica_pct=pol,
                      limite=limites[e["equipe"]], aviso_politica=aviso_pol,
-                     erp=descontos.lancamentos_erp(r, pol, com))
+                     politica_efetiva=pol_ef, erp=descontos.lancamentos_erp(r, pol_ef, com))
             if e["dividir"]:
-                dv = descontos.dividir(r, com, cfg["impostos"]["ipi"], pol)
+                dv = descontos.dividir(r, com, cfg["impostos"]["ipi"], pol_ef)
                 prop = dv["total_produtos"] / r["total_nf"] if r["total_nf"] else 0
                 dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
                 r["divisao"] = dv
@@ -493,14 +539,23 @@ def render(ano):
     cond_txt = ("desconto de " if r["cond_pct"] < 0 else "acréscimo de " if r["cond_pct"] > 0 else "") \
         + (pc(abs(r["cond_pct"])) if r["cond_pct"] else "sem desconto")
     valor_cond = r["total_tabela"] * r["cond_pct"] / 100
-    valor_pol = (r["total_tabela"] + valor_cond) * r["politica_pct"] / 100
+    valor_pol = r["total_tabela"] + valor_cond - r["valor_produtos"]
+    excs = e.get("excecoes") or []
+    rot_pol = (f"Política {pc(r['politica_pct'])}" if not excs else
+               f"Política: padrão {pc(r['politica_pct'])} e {len(excs)} item(ns) com desconto diferente "
+               f"(média {pc(r['politica_efetiva'])})")
     linhas_desc = [("Total Itens (tabela)", r["total_tabela"]),
                    (f"Condição {r['cond_rotulo']} ({cond_txt})", valor_cond),
-                   (f"Política {pc(r['politica_pct'])}", -valor_pol),
+                   (rot_pol, -valor_pol),
                    ("Valor dos produtos", r["valor_produtos"])]
     erp = r["erp"]
     linhas_erp = [(f"Condição de pagamento: {r['cond_rotulo']}", None),
-                  (f"Desconto Política: {r['politica_pct']:.4f}%".replace(".", ",") + " (aplicável aos itens)", None),
+                  ((f"Desconto Política: {r['politica_pct']:.4f}%".replace(".", ",") + " (aplicável aos itens)")
+                   if not excs else
+                   (f"Política (700/1/3) em cada item: {r['politica_pct']:.4f}%".replace(".", ",")
+                    + " · Desconto Política da capa: 0%"), None),
+                  *[(f"   exceção: {x['item']} — Política (700/1/3) {float(x['pct']):.4f}%".replace(".", ","), None)
+                    for x in excs],
                   ("Valor de frete (Entrega › Transporte)", erp["frete"]),
                   ("Acréscimo MONTAGEM (valor, aplicável ao pedido)", erp["montagem"])]
     if erp["difal"] or erp["fcp"]:
@@ -604,6 +659,9 @@ def render(ano):
            ("Condição:", f"{r['cond_rotulo']} ({cond_txt})"),
            ("Política:", f"{r['politica_pct']:.4f}%".replace(".", ",") + f" · equipe {e['equipe']}"
                          + (f" · valor desejado {formatar(e['alvo'])}" if e.get("alvo") else "")),
+           *([("Itens com desconto diferente:", " · ".join(
+               f"{x['item']}: {formatar(x['valor'])} a " + f"{float(x['pct']):.4f}%".replace(".", ",")
+               for x in e["excecoes"]))] if e.get("excecoes") else []),
            ("Frete:", e["frete_opcao"]),
            ("Montagem:", e["montagem_opcao"])]
     if e["km_ida_volta"]:
@@ -675,6 +733,7 @@ def render(ano):
             round(float(r["politica_pct"]), 4), n(e["alvo"]) if e.get("alvo") else "",
             "Sim" if dv else "Não", n(dv["servico"]) if dv else "", n(dv["desconto_itens"]) if dv else "",
             n(dv["total_produtos"]) if dv else "",
+            "; ".join(f"{x['item']}: {x['valor']:.2f} a {x['pct']:.4f}%" for x in e.get("excecoes") or []),
         ]
         pdf_adm = pdf(True)
         assunto = f"Simulação {versao} · {meta['orcamento']} · {meta['cliente']} · {meta['vendedor']}"
