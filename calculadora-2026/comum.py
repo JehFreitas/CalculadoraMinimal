@@ -86,8 +86,10 @@ def campo_numero(rotulo, chave, casas=2, minimo=0.0, maximo=None, help=None, pla
     st.session_state[chave] (float ou None)."""
     ss = st.session_state
     tk = chave + "_txt"
-    if tk not in ss and isinstance(ss.get(chave), (int, float)):
-        ss[tk] = fmt_br(float(ss[chave]), casas)
+    ult = chave + "_ult"
+    externo = ss.get(chave)
+    if isinstance(externo, (int, float)) and (tk not in ss or externo != ss.get(ult)):
+        ss[tk] = fmt_br(float(externo), casas)     # valor definido fora do campo (ex.: outra tela)
 
     def ler(txt):
         txt = txt or ""
@@ -107,6 +109,7 @@ def campo_numero(rotulo, chave, casas=2, minimo=0.0, maximo=None, help=None, pla
                                  placeholder=placeholder or ("0," + "0" * casas))
     v = ler(ss.get(tk))
     ss[chave] = v
+    ss[ult] = v
     if (ss.get(tk) or "").strip() and v is None:
         (container or st).caption(":red[Valor não reconhecido. Exemplo: "
                                   + ("42.671,46" if casas == 2 else "18,8532") + "]")
