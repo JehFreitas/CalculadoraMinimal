@@ -3,6 +3,7 @@
 # Sem credenciais, a calculadora continua funcionando e oferece downloads de reserva.
 
 import base64
+import mimetypes
 import csv
 import io
 import re
@@ -364,7 +365,7 @@ def enviar_email(st, assunto, corpo_html, anexos, token=None, destinatarios=None
             "toRecipients": [{"emailAddress": {"address": a}} for a in dest],
             "attachments": [
                 {"@odata.type": "#microsoft.graph.fileAttachment", "name": nome,
-                 "contentType": "application/pdf",
+                 "contentType": mimetypes.guess_type(nome)[0] or "application/octet-stream",
                  "contentBytes": base64.b64encode(conteudo).decode("ascii")}
                 for nome, conteudo in anexos
             ],

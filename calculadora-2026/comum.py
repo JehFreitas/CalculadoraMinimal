@@ -12,7 +12,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.pdfencrypt import StandardEncryption
 from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import (KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table,
+from reportlab.lib.utils import ImageReader
+from reportlab.platypus import (Image, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table,
                                 TableStyle)
 from xml.sax.saxutils import escape
 
@@ -340,7 +341,24 @@ def _titulo_quadro(texto, largura=None):
     return t
 
 
-def gerar_pdf(titulo_versao, cabecalho_linhas, blocos, notas=(), senha=None, focco=None, blocos_finais=()):
+def _imagens(imagens):
+    """Prints anexados (cotações): uma imagem por bloco, ajustada à largura da página."""
+    out = [PageBreak(), _p("Cotações anexadas", _SEC)]
+    for titulo, dados in imagens:
+        try:
+            leitor = ImageReader(io.BytesIO(dados))
+            w, h = leitor.getSize()
+        except Exception:
+            out += [_p(f"{titulo}: arquivo de imagem não pôde ser lido.", _NOTA), Spacer(1, 8)]
+            continue
+        esc = min(LARGURA / w, 560 / h, 1.0)
+        out.append(KeepTogether([_titulo_quadro(titulo), Spacer(1, 6),
+                                 Image(io.BytesIO(dados), width=w * esc, height=h * esc), Spacer(1, 14)]))
+    return out
+
+
+def gerar_pdf(titulo_versao, cabecalho_linhas, blocos, notas=(), senha=None, focco=None, blocos_finais=(),
+              imagens=()):
     """
     cabecalho_linhas: [(rótulo, valor texto)]
     blocos: [(título, [(rótulo, valor Decimal ou texto ou None)])]  — primeira página
@@ -397,6 +415,8 @@ def gerar_pdf(titulo_versao, cabecalho_linhas, blocos, notas=(), senha=None, foc
             hist.append(_quadro(titulo, linhas))
     for t in notas:
         hist.append(_p(t, _NOTA))
+    if imagens:
+        hist += _imagens(imagens)
     doc.build(hist, onFirstPage=moldura, onLaterPages=moldura)
     return buffer.getvalue()
 
