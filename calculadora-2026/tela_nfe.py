@@ -415,10 +415,14 @@ def render(ano):
             st.radio("Frete *", OPCOES, index=None, key=k("frete_opcao"))
             if ss.get(k("frete_opcao")) == "Informar valor negociado":
                 comum.campo_numero("Valor negociado do frete *", k("frete_negociado"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
+                st.file_uploader("Print da cotação do frete *", type=["png", "jpg", "jpeg"], key=k("cot_frete"),
+                                 help="Imagem da cotação confirmada pela Lia. Vai no PDF do ADM.")
         with c2:
             st.radio("Montagem *", OPCOES, index=None, key=k("montagem_opcao"))
             if ss.get(k("montagem_opcao")) == "Informar valor negociado":
                 comum.campo_numero("Valor negociado da montagem *", k("montagem_negociada"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
+                st.file_uploader("Print da cotação da montagem *", type=["png", "jpg", "jpeg"], key=k("cot_montagem"),
+                                 help="Imagem da cotação confirmada pela Lia. Vai no PDF do ADM.")
             if ss.get(k("montagem_opcao")) == "Calcular" and estado and cidade and not sp_capital:
                 st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0,
                                 value=None, format="%.0f", key=k("km_ida_volta"))
@@ -532,10 +536,14 @@ def render(ano):
             f.append("Frete")
         elif ss.get(k("frete_opcao")) == "Informar valor negociado" and not ss.get(k("frete_negociado")):
             f.append("Valor negociado do frete")
+        if ss.get(k("frete_opcao")) == "Informar valor negociado" and not ss.get(k("cot_frete")):
+            f.append("Print da cotação do frete")
         if not ss.get(k("montagem_opcao")):
             f.append("Montagem")
         elif ss.get(k("montagem_opcao")) == "Informar valor negociado" and not ss.get(k("montagem_negociada")):
             f.append("Valor negociado da montagem")
+        if ss.get(k("montagem_opcao")) == "Informar valor negociado" and not ss.get(k("cot_montagem")):
+            f.append("Print da cotação da montagem")
         if ss.get(k("montagem_opcao")) == "Calcular" and not sp_capital and not ss.get(k("km_ida_volta")):
             f.append("Distância ida e volta (km)")
         return f
@@ -855,6 +863,17 @@ def render(ano):
                     notas_totais=["O Focco arredonda item a item: o Valor Total pode diferir alguns centavos. "
                                   "Total ICMS e Total DIFAL do Focco não entram na conferência."])
 
+    def cotacoes():
+        """Prints das cotações de frete/montagem negociados: [(título, bytes)]."""
+        out = []
+        for opcao, chave, titulo, valor in (
+                ("frete_opcao", "cot_frete", "Cotação do frete", e.get("frete_negociado")),
+                ("montagem_opcao", "cot_montagem", "Cotação da montagem", e.get("montagem_negociada"))):
+            arq = ss.get(k(chave))
+            if e.get(opcao) == "Informar valor negociado" and arq is not None:
+                out.append((f"{titulo} · custo informado {formatar(calculo.d(valor))} · {arq.name}", arq.getvalue()))
+        return out
+
     def pdf(admin):
         blocos = [("Condição e desconto", linhas_desc),
                   ("Resumo da Nota Fiscal (NFe)", linhas_nf)]
@@ -894,7 +913,7 @@ def render(ano):
                      f"Cálculo resolvido em {r['iteracoes']} rodada(s)."]
         return comum.gerar_pdf(versao + (" · Adm Comercial" if admin else ""), cab, blocos, notas,
                                senha=comum.senha_adm() if admin else None, focco=quadros_focco(),
-                               blocos_finais=finais)
+                               blocos_finais=finais, imagens=cotacoes() if admin else ())
 
     base = comum.nome_base(meta)
     st.download_button("📄 Baixar PDF do Resultado", data=pdf(False), file_name=f"{base}.pdf",
@@ -939,6 +958,11 @@ def render(ano):
                     + "".join(f"<tr><td>{t.strip()}</td><td><b>{formatar(v)}</b></td></tr>"
                               for t, v in linhas_div if v is not None) + "</table>" if dv else "")
                  + "<p>O PDF do Adm Comercial é protegido por senha.</p>")
-        return linha, assunto, corpo, [(f"ADM_{base}.pdf", pdf_adm), (f"{base}.pdf", pdf(False))], pdf_adm
+        anexos = [(f"ADM_{base}.pdf", pdf_adm), (f"{base}.pdf", pdf(False))]
+        for chave in ("cot_frete", "cot_montagem"):
+            arq = ss.get(k(chave))
+            if arq is not None and e.get("frete_opcao" if chave == "cot_frete" else "montagem_opcao") == "Informar valor negociado":
+                anexos.append((f"{chave.replace('cot_', 'Cotacao_')}_{arq.name}", arq.getvalue()))
+        return linha, assunto, corpo, anexos, pdf_adm
 
     comum.bloco_envio(sim, meta, "nfe", montar_envio, base)
