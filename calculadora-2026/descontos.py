@@ -170,8 +170,10 @@ def resolver(e, cfg, motor, total_tabela, cond_pct, limite, modo, politica=None,
         return Decimal(0), r0, aviso
     rmax = calc(limite)
     if rmax["total_nf"] > alvo:
+        menor = f"R$ {rmax['total_nf']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        lim_txt = f"{limite:f}".rstrip("0").rstrip(".").replace(".", ",")
         return limite, rmax, ("Não é possível chegar ao valor desejado dentro do limite da política "
-                              f"({limite}%). O menor total possível é o mostrado abaixo.")
+                              f"({lim_txt}%). O menor Valor Total possível é {menor}.")
     lo, hi = Decimal(0), limite          # total cai quando a política sobe
     for _ in range(60):
         meio = (lo + hi) / 2
