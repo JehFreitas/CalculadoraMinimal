@@ -137,7 +137,35 @@ def politica_efetiva(total_tabela, cond_pct, valor_prod):
     return (1 - d(valor_prod) / base) * 100 if base else Decimal(0)
 
 
-def resolver(e, cfg, motor, total_tabela, cond_pct, limite, modo, politica=None, alvo=None, excecoes=()):
+def ipi_efetivo(ipi_padrao, total_tabela, pol_pct, excecoes=(), ipi_itens=()):
+    """
+    IPI médio do pedido quando alguns itens têm IPI diferente do padrão.
+    Frete, montagem e DIFAL são rateados pelo valor dos itens na NF, então a média
+    ponderada pelo valor líquido de cada item vale para o pedido todo.
+    ipi_itens: [(nome, valor de tabela × qtd, % IPI)]; um item com o mesmo nome de uma
+    exceção de desconto usa o desconto dela, os demais a política padrão.
+    """
+    if not ipi_itens:
+        return d(ipi_padrao)
+    desc = {str(n).strip().lower(): d(p) for n, _, p in excecoes}
+    pol = d(pol_pct)
+    exc_val = sum((d(v) for _, v, _ in excecoes), Decimal(0))
+    liquido = (d(total_tabela) - exc_val) * (1 - pol / 100) + \
+        sum((d(v) * (1 - d(p) / 100) for _, v, p in excecoes), Decimal(0))
+    if liquido <= 0:
+        return d(ipi_padrao)
+    soma = Decimal(0)
+    liq_itens = Decimal(0)
+    for nome, v, ipi in ipi_itens:
+        p = desc.get(str(nome).strip().lower(), pol)
+        li = d(v) * (1 - p / 100)
+        soma += li * d(ipi)
+        liq_itens += li
+    return (soma + (liquido - liq_itens) * d(ipi_padrao)) / liquido
+
+
+def resolver(e, cfg, motor, total_tabela, cond_pct, limite, modo, politica=None, alvo=None, excecoes=(),
+             ipi_itens=(), nomes_excecoes=()):
     """
     Calcula a NF a partir do Total Itens de tabela.
     modo "percentual": usa a política informada (até o limite).
@@ -151,7 +179,15 @@ def resolver(e, cfg, motor, total_tabela, cond_pct, limite, modo, politica=None,
 
     def calc(pol):
         ent = dict(e, valor_produtos=valor_produtos(total_tabela, cond_pct, pol, excecoes))
-        return motor.calcular(ent, cfg)
+        cfg_c = cfg
+        ipi = d(cfg["impostos"]["ipi"])
+        if ipi_itens:
+            ipi = ipi_efetivo(cfg["impostos"]["ipi"], total_tabela, pol,
+                              [(n, v, p) for n, (v, p) in zip(nomes_excecoes, excecoes)], ipi_itens)
+            cfg_c = dict(cfg, impostos=dict(cfg["impostos"], ipi=float(ipi)))
+        r = motor.calcular(ent, cfg_c)
+        r["ipi_pct"] = ipi
+        return r
 
     if modo == "percentual":
         pol = d(politica)
