@@ -149,6 +149,9 @@ def gerar_pdf(titulo_versao, cabecalho_linhas, blocos, notas=(), senha=None):
         c.setFillColorRGB(0, 0, 0)
         for rot, val in linhas:
             nova_linha(14)
+            if val is None:
+                c.drawString(40, y[0], rot.strip())
+                continue
             texto = val if isinstance(val, str) else formatar(val)
             c.drawString(40, y[0], f"{rot.strip()}: {texto}")
 
