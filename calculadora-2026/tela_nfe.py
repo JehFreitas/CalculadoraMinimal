@@ -330,14 +330,13 @@ def render(ano):
                          help="Opcional. Informada, a calculadora mostra a comissão estimada. "
                               "Obrigatória para escolher pela comissão.")
         faixas = descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda")))
-        modos = [MODO_PCT, MODO_COM, MODO_ALVO]
+        modos = [MODO_PCT] + ([MODO_COM] if tem_tab else []) + [MODO_ALVO]
+        if ss.get(k("modo_pol")) not in modos:
+            ss[k("modo_pol")] = None
         c2.radio("Desconto da política *", modos, index=None, key=k("modo_pol"))
         limite = limite_efetivo(ss.get(k("equipe")), faixas)
-        if ss.get(k("modo_pol")) == MODO_COM and ss.get(k("equipe")) and not tem_tab:
-            st.warning(f"Ainda não há tabela de comissão cadastrada para {ss.get(k('equipe'))}. "
-                       "Escolha outro jeito de informar o desconto.")
-        elif ss.get(k("modo_pol")) == MODO_COM and not faixas:
-            st.caption("Selecione a equipe e a divisão de venda para escolher a comissão.")
+        if ss.get(k("modo_pol")) == MODO_COM and not faixas:
+            st.caption("Selecione a divisão de venda para escolher a comissão.")
         if ss.get(k("modo_pol")) == MODO_COM and faixas:
             st.selectbox("Comissão desejada *", list(range(len(faixas))), index=None, key=k("faixa"),
                          format_func=lambda i: descontos.rotulo_faixa(faixas, i), placeholder="Selecione",
