@@ -78,6 +78,33 @@ def capital_ou_interior(uf, cidade):
     return "Capital" if _normalizar(cidade) == _normalizar(cap) else "Interior"
 
 
+# Atividades (divisão do CNAE, 2 primeiros dígitos) que costumam ter inscrição estadual
+# sem serem contribuintes do ICMS na compra de móveis (uso e consumo). Lista a validar
+# com a contabilidade. Com IE + uma destas atividades, a calculadora não marca
+# "Contribuinte" sozinha: o vendedor confirma.
+CNAE_ALERTA = {
+    "41": "construção de edifícios", "42": "obras de infraestrutura", "43": "serviços de construção",
+    "62": "tecnologia da informação", "63": "serviços de informação",
+    "64": "serviços financeiros", "65": "seguros", "66": "serviços financeiros auxiliares",
+    "68": "atividades imobiliárias", "69": "serviços jurídicos e contábeis",
+    "70": "consultoria em gestão", "71": "arquitetura e engenharia", "72": "pesquisa",
+    "73": "publicidade", "74": "serviços profissionais", "75": "serviços veterinários",
+    "77": "aluguéis", "78": "seleção de mão de obra", "79": "agências de viagem",
+    "80": "vigilância", "81": "serviços para edifícios", "82": "serviços administrativos",
+    "84": "administração pública", "85": "educação", "86": "saúde", "87": "assistência social",
+    "88": "assistência social", "90": "artes e espetáculos", "91": "cultura",
+    "93": "esporte e lazer", "94": "organizações associativas", "96": "serviços pessoais",
+}
+
+
+def alerta_cnae(cnae):
+    """Descrição da atividade de risco (cliente com IE que pode não ser contribuinte), ou None."""
+    c = so_digitos(str(cnae or ""))
+    if not c:
+        return None
+    return CNAE_ALERTA.get(c.zfill(7)[:2])
+
+
 def _agora():
     return datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
 
@@ -112,8 +139,11 @@ def _de_cnpja(j, fonte, com_ie):
         else:
             ie_txt = "Sem inscrição estadual"
 
+    atv = j.get("mainActivity") or {}
+    cnae = str(atv.get("id") or "").zfill(7) if atv.get("id") else ""
     return dict(
         ok=bool(uf), fonte=fonte, data_hora=_agora(),
+        cnae=cnae, cnae_texto=atv.get("text") or "", cnae_alerta=alerta_cnae(cnae),
         razao_social=comp.get("name") or "", situacao=status,
         uf=uf, estado=UF_NOME.get(uf), municipio=cidade,
         cidade=capital_ou_interior(uf, cidade),
@@ -127,8 +157,10 @@ def _de_brasilapi(j):
     cidade = j.get("municipio") or ""
     simples = j.get("opcao_pelo_simples")
     mei = j.get("opcao_pelo_mei")
+    cnae = str(j.get("cnae_fiscal") or "").zfill(7) if j.get("cnae_fiscal") else ""
     return dict(
         ok=bool(uf), fonte="BrasilAPI (gratuita)", data_hora=_agora(),
+        cnae=cnae, cnae_texto=j.get("cnae_fiscal_descricao") or "", cnae_alerta=alerta_cnae(cnae),
         razao_social=j.get("razao_social") or "", situacao=j.get("descricao_situacao_cadastral") or "",
         uf=uf, estado=UF_NOME.get(uf), municipio=cidade.title(),
         cidade=capital_ou_interior(uf, cidade),

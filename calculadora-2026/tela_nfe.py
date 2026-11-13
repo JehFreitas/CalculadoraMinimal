@@ -244,7 +244,9 @@ def render(ano):
             ss[k("estado")] = dados["estado"]
         if dados.get("cidade"):
             ss[k("cidade")] = dados["cidade"]
-        if dados.get("contribuinte_ie") is not None:
+        if dados.get("contribuinte_ie") is True and dados.get("cnae_alerta"):
+            ss[k("contribuinte")] = None      # IE + atividade de risco: o vendedor confirma
+        elif dados.get("contribuinte_ie") is not None:
             ss[k("contribuinte")] = CONTRIBUINTE if dados["contribuinte_ie"] else NAO_CONTRIBUINTE
         if not ss.get(k("cliente")) and dados.get("razao_social"):
             ss[k("cliente")] = dados["razao_social"]
@@ -271,6 +273,9 @@ def render(ano):
                 linhas = [f"**{cons['razao_social']}**",
                           f"{cons['municipio']}/{cons['uf']} · situação: {cons['situacao'] or '—'} · "
                           f"Simples Nacional: {cons['simples'] or '—'}"]
+                if cons.get("cnae"):
+                    c = cons["cnae"]
+                    linhas.append(f"Atividade principal: {c[:4]}-{c[4]}/{c[5:]} {cons.get('cnae_texto', '')}")
                 if cons.get("ie_texto"):
                     linhas.append(f"Inscrição estadual: {cons['ie_texto']}")
                 linhas.append(f"Consulta em {cons['data_hora']} · {cons['fonte']}")
@@ -281,6 +286,16 @@ def render(ano):
                     st.warning("Cliente com inscrição na SUFRAMA (Zona Franca / Área de Livre Comércio). "
                                "Os benefícios de ICMS e IPI não são tratados pela calculadora: "
                                "consulte o Adm Comercial antes de enviar a proposta.")
+                if cons.get("contribuinte_ie") is True and cons.get("cnae_alerta"):
+                    st.warning(f"⚠️ O cliente tem inscrição estadual, mas a atividade principal "
+                               f"({cons['cnae_alerta']}) costuma ser de quem **não é contribuinte do ICMS** "
+                               "na compra de móveis. Confirme com o cliente e marque abaixo. "
+                               "Na dúvida, marque não contribuinte ou fale com Custos: "
+                               "marcar contribuinte por engano deixa o DIFAL fora do orçamento.")
+                elif cons.get("contribuinte_ie") is True:
+                    st.info("Ter inscrição estadual não garante que o cliente é contribuinte do ICMS. "
+                            "Confirme com o cliente se ele revende ou industrializa o produto e emite "
+                            "NF-e de venda. Na dúvida, fale com Custos.")
                 if cons.get("contribuinte_ie") is None:
                     st.info(f"A consulta não trouxe a inscrição estadual. Confira se o cliente é "
                             f"contribuinte no [Cadastro de Contribuintes (CCC)]({consulta.LINK_CCC}) "
@@ -508,7 +523,7 @@ def render(ano):
             return "Manual", "Manual", "", ""
         local = ("Consulta" if (cons.get("estado") == e["estado"] and cons.get("cidade") == e["cidade"])
                  else "Consulta alterada pelo vendedor")
-        if cons.get("contribuinte_ie") is None:
+        if cons.get("contribuinte_ie") is None or (cons.get("contribuinte_ie") and cons.get("cnae_alerta")):
             contrib = "Manual"
         else:
             esperado = CONTRIBUINTE if cons["contribuinte_ie"] else NAO_CONTRIBUINTE
