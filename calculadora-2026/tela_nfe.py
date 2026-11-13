@@ -719,7 +719,7 @@ def render(ano):
            ("Destino:", f"{e['estado']} · {e['cidade']}"),
            ("Perfil fiscal:", e["contribuinte"] + (f" · {e['finalidade']}" if e["finalidade"] else "")),
            ("Condição:", f"{r['cond_rotulo']} ({cond_txt})"),
-           ("Política:", f"{r['politica_pct']:.4f}%".replace(".", ",") + f" · equipe {e['equipe']}"
+           ("Política:", f"{r['politica_pct']:.4f}%".replace(".", ",") + f" · {e['equipe']}"
                          + (f" · valor desejado {formatar(e['alvo'])}" if e.get("alvo") else "")),
            *([("Itens com desconto diferente:", " · ".join(
                f"{x['item']}: {formatar(x['valor'])} a " + f"{float(x['pct']):.4f}%".replace(".", ",")
@@ -732,7 +732,7 @@ def render(ano):
     def pdf(admin):
         blocos = [("Condição e desconto", linhas_desc),
                   ("Resumo da Nota Fiscal (NFe)", linhas_nf),
-                  ("Lançar no orçamento (ERP)", [(t, v) for t, v in linhas_erp if v is not None])]
+                  ("Lançar no orçamento (ERP)", linhas_erp)]
         notas = []
         if dv and not admin:
             blocos.append(("Após a divisão", [("Total NFe (produtos)", dv["total_produtos"]),
