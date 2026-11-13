@@ -45,6 +45,67 @@ def formatar(valor):
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def numero_br(texto):
+    """Lê um número digitado ou colado em qualquer formato comum:
+    42.671,46 · 42671,46 · 42671.46 · R$ 42.671,46 · 1.234.567 · 18,8532. None se não der."""
+    if texto is None:
+        return None
+    t = str(texto).strip().replace("R$", "").replace(" ", "").replace("\u00a0", "").replace("%", "")
+    if not t:
+        return None
+    neg = t.startswith("-")
+    t = t.lstrip("+-")
+    if "," in t and "." in t:
+        dec = "," if t.rfind(",") > t.rfind(".") else "."
+        mil = "." if dec == "," else ","
+        t = t.replace(mil, "").replace(dec, ".")
+    elif "," in t:
+        partes = t.split(",")
+        t = t.replace(",", "") if (len(partes) > 2) else t.replace(",", ".")
+    elif "." in t:
+        partes = t.split(".")
+        # ponto como separador de milhar: vários pontos, ou um só com 3 dígitos depois e parte inteira > 0
+        if len(partes) > 2 or (len(partes[-1]) == 3 and partes[0] not in ("", "0")):
+            t = t.replace(".", "")
+    try:
+        v = float(t)
+    except ValueError:
+        return None
+    return -v if neg else v
+
+
+def fmt_br(valor, casas=2):
+    return f"{valor:,.{casas}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def campo_numero(rotulo, chave, casas=2, minimo=0.0, maximo=None, help=None, placeholder=None, container=None):
+    """Campo de texto para valores em formato brasileiro (ponto no milhar, vírgula no decimal).
+    Aceita valores colados em qualquer formato e reescreve no padrão. O número fica em
+    st.session_state[chave] (float ou None); o texto, em chave + '_txt'."""
+    ss = st.session_state
+    tk = chave + "_txt"
+    if ss.get(chave) is not None and not ss.get(tk):
+        ss[tk] = fmt_br(float(ss[chave]), casas)
+
+    def ao_mudar():
+        txt = ss.get(tk) or ""
+        if maximo is not None and maximo <= 100 and txt.count(".") == 1 and "," not in txt:
+            txt = txt.replace(".", ",")          # percentual: ponto sozinho é decimal (18.8532)
+        v = numero_br(txt)
+        if v is not None and (v < minimo or (maximo is not None and v > maximo)):
+            v = None
+        ss[chave] = v
+        if v is not None:
+            ss[tk] = fmt_br(v, casas)
+
+    (container or st).text_input(rotulo, key=tk, on_change=ao_mudar, help=help,
+                                 placeholder=placeholder or ("0," + "0" * casas))
+    if (ss.get(tk) or "").strip() and ss.get(chave) is None:
+        (container or st).caption(":red[Valor não reconhecido. Exemplo: "
+                                  + ("42.671,46" if casas == 2 else "18,8532") + "]")
+    return ss.get(chave)
+
+
 def md(texto):
     """Escapa o "$" de "R$" para o Streamlit não tratar o trecho como fórmula."""
     return texto.replace("$", "\\$")

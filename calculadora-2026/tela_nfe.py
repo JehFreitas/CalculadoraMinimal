@@ -336,10 +336,10 @@ def render(ano):
 
     with st.container(border=True):
         st.subheader("3. Produtos, condição e desconto")
-        st.number_input("Total Itens — valor de tabela, sem descontos (com ICMS embutido) *"
-                        + (" — preço de 2027, sem CBS/IBS" if ano == "2027" else ""),
-                        min_value=0.0, value=None, format="%.2f", key=k("total_tabela"),
-                        help="Campo Total Itens da tela de Totais do orçamento, antes de condição e política.")
+        comum.campo_numero("Total Itens — valor de tabela, sem descontos (com ICMS embutido) *"
+                           + (" — preço de 2027, sem CBS/IBS" if ano == "2027" else ""), k("total_tabela"),
+                           help="Campo Total Itens da tela de Totais do orçamento, antes de condição e política. "
+                                "Pode colar o valor do Focco: a calculadora acerta pontos e vírgulas.")
         st.selectbox("Condição de pagamento *", list(conds.keys()), index=None, key=k("condicao"),
                      format_func=lambda cod: descontos.rotulo_condicao(conds[cod], com),
                      placeholder="Selecione",
@@ -371,12 +371,10 @@ def render(ano):
                          format_func=lambda i: descontos.rotulo_faixa(faixas, i), placeholder="Selecione",
                          help="A política fica no maior desconto da faixa escolhida (até o limite da equipe).")
         if ss.get(k("modo_pol")) == MODO_PCT:
-            st.number_input("Desconto da política (%) *", min_value=0.0, max_value=100.0,
-                            value=None, step=0.0001, format="%.4f", key=k("politica"),
-                            help="Aplicado sobre os itens já com a condição de pagamento, como no ERP.")
+            comum.campo_numero("Desconto da política (%) *", k("politica"), casas=4, maximo=100.0,
+                               help="Aplicado sobre os itens já com a condição de pagamento, como no ERP.")
         elif ss.get(k("modo_pol")) == MODO_ALVO:
-            st.number_input("Valor total da NF desejado (R$) *", min_value=0.0, value=None,
-                            format="%.2f", key=k("alvo"),
+            comum.campo_numero("Valor total da NF desejado (R$) *", k("alvo"),
                             help="A calculadora encontra o % da política. Frete, montagem e DIFAL/FCP "
                                  "não são reduzidos para caber no valor, e o limite da equipe é respeitado.")
         st.checkbox("Alguns itens têm desconto diferente", key=k("tem_exc"),
@@ -416,13 +414,11 @@ def render(ano):
         with c1:
             st.radio("Frete *", OPCOES, index=None, key=k("frete_opcao"))
             if ss.get(k("frete_opcao")) == "Informar valor negociado":
-                st.number_input("Valor negociado do frete *", min_value=0.0, value=None,
-                                format="%.2f", key=k("frete_negociado"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
+                comum.campo_numero("Valor negociado do frete *", k("frete_negociado"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
         with c2:
             st.radio("Montagem *", OPCOES, index=None, key=k("montagem_opcao"))
             if ss.get(k("montagem_opcao")) == "Informar valor negociado":
-                st.number_input("Valor negociado da montagem *", min_value=0.0, value=None,
-                                format="%.2f", key=k("montagem_negociada"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
+                comum.campo_numero("Valor negociado da montagem *", k("montagem_negociada"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
             if ss.get(k("montagem_opcao")) == "Calcular" and estado and cidade and not sp_capital:
                 st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0,
                                 value=None, format="%.0f", key=k("km_ida_volta"))
