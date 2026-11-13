@@ -13,7 +13,7 @@
   "Prime": 45.0,
   "Representantes": 52.0
  },
- "politica_desconta_acrescimos_aos_itens": true,
+ "politica_desconta_acrescimos_aos_itens": false,
  "condicoes": [
   {
    "codigo": 43,
