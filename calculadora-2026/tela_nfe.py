@@ -290,12 +290,12 @@ def render(ano):
                     st.warning(f"⚠️ O cliente tem inscrição estadual, mas a atividade principal "
                                f"({cons['cnae_alerta']}) costuma ser de quem **não é contribuinte do ICMS** "
                                "na compra de móveis. Confirme com o cliente e marque abaixo. "
-                               "Na dúvida, marque não contribuinte ou fale com Custos: "
+                               "Na dúvida, consulte o Financeiro: "
                                "marcar contribuinte por engano deixa o DIFAL fora do orçamento.")
                 elif cons.get("contribuinte_ie") is True:
                     st.info("Ter inscrição estadual não garante que o cliente é contribuinte do ICMS. "
                             "Confirme com o cliente se ele revende ou industrializa o produto e emite "
-                            "NF-e de venda. Na dúvida, fale com Custos.")
+                            "NF-e de venda. Na dúvida, consulte o Financeiro.")
                 if cons.get("contribuinte_ie") is None:
                     st.info(f"A consulta não trouxe a inscrição estadual. Confira se o cliente é "
                             f"contribuinte no [Cadastro de Contribuintes (CCC)]({consulta.LINK_CCC}) "
