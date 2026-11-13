@@ -636,7 +636,7 @@ def render(ano):
                 st.warning("Algum desconto está acima da tabela de comissão desta divisão de venda.")
         st.caption(f"Prazo médio da condição: {float(r['cond_prazo']):.1f} dias · "
                    f"limite da política: {float(r['limite']):g}%".replace(".", ",")
-                   + (f" (equipe {e['equipe']}" + (f", {e['divisao_venda']})" if e.get("divisao_venda") else ")")))
+                   + (f" ({e['equipe']}" + (f", {e['divisao_venda']})" if e.get("divisao_venda") else ")")))
 
     with st.container(border=True):
         st.subheader("Resumo da Nota Fiscal")
