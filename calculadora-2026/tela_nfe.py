@@ -735,26 +735,62 @@ def render(ano):
     if e["km_ida_volta"]:
         cab.append(("Distância:", f"{e['km_ida_volta']:.0f} km"))
 
+    def quadros_focco():
+        """Quadros da 2ª página do PDF, no formato das telas do Focco."""
+        lanc = []
+        cond_val = r["total_tabela"] * r["cond_pct"] / 100
+        if not excs:
+            lanc.append(("Desconto", "Desconto Politica (800/2/3)", r["politica_pct"], "Percentual",
+                         "Aplicável aos Itens"))
+        if erp["difal"]:
+            lanc.append(("Acréscimo", "DIFAL (999/1/3)", erp["difal"], "Valor", "Aplicável aos Itens"))
+        if erp["fcp"]:
+            lanc.append(("Acréscimo", "FUNDO DE COMBATE A POBREZA (999/1/3)", erp["fcp"], "Valor",
+                         "Aplicável aos Itens"))
+        if erp["montagem"]:
+            lanc.append(("Acréscimo", "MONTAGEM (999/1/3)", erp["montagem"], "Valor", "Aplicável ao Pedido"))
+        notas_l = [f"Condição de pagamento {r['cond_rotulo']} ({cond_txt}): informe no campo próprio "
+                   "da condição de pagamento, não neste quadro."]
+        if not lanc:
+            notas_l.append("Nenhum desconto ou acréscimo a lançar.")
+        notas_l.append("Não lançar \"Frete - diluído aos itens\". O desconto SERVIÇO, quando houver divisão, "
+                       "é lançado pelo ADM Comercial.")
+        pol_itens = []
+        if excs:
+            pol_itens = [(x["item"], x["pct"]) for x in excs] + [("Demais itens", r["politica_pct"])]
+            notas_l.append("Política lançada em cada item (700/1/3). Desconto Politica da capa: 0%.")
+        descontos_t = (-cond_val if cond_val < 0 else 0) + valor_pol
+        acresc_t = (cond_val if cond_val > 0 else 0) + erp["montagem"] + erp["difal"] + erp["fcp"]
+        totais = [("Total Itens", r["total_tabela"]), ("Total Descontos", descontos_t),
+                  ("Total Acréscimos", acresc_t), ("Total Frete", erp["frete"]), ("Total IPI", r["ipi"])]
+        if ano == "2027":
+            totais += [("Total CBS", r["cbs"]), ("Total IBS", r["ibs"])]
+        totais.append(("Valor Total", r["total_nf"]))
+        return dict(lancamentos=lanc, notas_lancamentos=notas_l, politica_itens=pol_itens, totais=totais,
+                    entrega=[("Valor de frete", erp["frete"]), ("Valor de seguro", 0)],
+                    notas_totais=["O Focco arredonda item a item: o Valor Total pode diferir alguns centavos. "
+                                  "Total ICMS e Total DIFAL do Focco não entram na conferência."])
+
     def pdf(admin):
         blocos = [("Condição e desconto", linhas_desc),
-                  ("Resumo da Nota Fiscal (NFe)", linhas_nf),
-                  ("Lançar no orçamento (ERP)", linhas_erp)]
+                  ("Resumo da Nota Fiscal (NFe)", linhas_nf)]
         notas = []
+        finais = []
         if dv and not admin:
             blocos.append(("Após a divisão", [("Total NFe (produtos)", dv["total_produtos"]),
                                               ("Total NFSe (serviço)", dv["servico"])]))
         if admin and dv:
-            blocos.append(("Divisão em pedido de produtos e de serviço",
+            finais.append(("Divisão em pedido de produtos e de serviço",
                            [(t.strip(), v) for t, v in linhas_div if v is not None]))
-            blocos.append(("Efeito da divisão", linhas_efeito))
+            finais.append(("Efeito da divisão", linhas_efeito))
         if admin:
             if sem_ie:
                 if dv:
-                    blocos.append(("Guias (sobre o pedido de produtos)",
+                    finais.append(("Guias (sobre o pedido de produtos)",
                                    [("Guia DIFAL", dv["guia_difal"]), ("Guia FCP", dv["guia_fcp"])]))
                 else:
-                    blocos.append(("Guias", [("Guia DIFAL", r["difal"]), ("Guia FCP", r["fcp"])]))
-            blocos.append(("Custos e conferência", [
+                    finais.append(("Guias", [("Guia DIFAL", r["difal"]), ("Guia FCP", r["fcp"])]))
+            finais.append(("Custos e conferência", [
                 ("A pagar à transportadora", r["frete_custo"]),
                 ("A pagar à montadora", r["montagem_custo"]),
                 ("  · parte percentual", r["montagem_pct"]),
@@ -767,13 +803,14 @@ def render(ano):
                     linhas += [("ICMS sobre IPI e embutido", r["icms_extra"]),
                                ("PIS/COFINS sobre o embutido", r["pis_cofins_extra"])]
                 linhas.append(("Sobra do embutido (deve ser zero)", r["sobra_difal"]))
-                blocos.append(("Valor embutido", linhas))
+                finais.append(("Valor embutido", linhas))
             loc, contrib, dh, fonte = sim["origem"]
             notas = [f"Origem UF/cidade: {loc} · Origem contribuinte: {contrib}"
                      + (f" · Consulta {dh} ({fonte})" if dh else ""),
                      f"Cálculo resolvido em {r['iteracoes']} rodada(s)."]
         return comum.gerar_pdf(versao + (" · Adm Comercial" if admin else ""), cab, blocos, notas,
-                               senha=comum.senha_adm() if admin else None)
+                               senha=comum.senha_adm() if admin else None, focco=quadros_focco(),
+                               blocos_finais=finais)
 
     base = comum.nome_base(meta)
     st.download_button("📄 Baixar PDF do Resultado", data=pdf(False), file_name=f"{base}.pdf",
