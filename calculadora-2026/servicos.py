@@ -315,7 +315,13 @@ def testar_integracao(st):
             if erro:
                 res.append((False, erro))
             else:
-                res.append((True, "Planilha encontrada."))
+                info = requests.get(f"{drive}/items/{item}?$select=webUrl,parentReference,name",
+                                    headers=h, timeout=TIMEOUT)
+                url = info.json().get("webUrl", "") if info.status_code == 200 else ""
+                pasta = (info.json().get("parentReference", {}).get("path", "").split("root:", 1)[-1].strip("/")
+                         if info.status_code == 200 else "")
+                res.append((True, "Planilha encontrada" + (f" na pasta \"{pasta}\"" if pasta else "")
+                            + (f": [abrir no SharePoint]({url})" if url else ".")))
                 t = requests.get(f"{drive}/items/{item}/workbook/tables", headers=h, timeout=TIMEOUT)
                 nomes = [x.get("name") for x in t.json().get("value", [])] if t.status_code == 200 else []
                 for tipo, (padrao, _) in TABELAS.items():
