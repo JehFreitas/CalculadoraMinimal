@@ -254,6 +254,50 @@ def registrar_planilha(st, valores, token=None, tipo="nfe"):
         return False, f"Falha de conexão com o SharePoint: {exc}"
 
 
+def criar_planilha(st):
+    """Sobe o modelo da planilha para o caminho de file_path no SharePoint (cria as pastas que
+    faltarem). Não substitui: se a planilha já existir, não faz nada. Retorna (ok, mensagem)."""
+    sp = _config_sharepoint(st)
+    if not sp:
+        return False, "Planilha não configurada (secrets [sharepoint])."
+    token, erro = _token_microsoft(st)
+    if not token:
+        return False, erro
+    h = {"Authorization": f"Bearer {token}"}
+    try:
+        drive, item, erro = _localizar_planilha(sp, h)
+        if item:
+            return False, "A planilha já existe no SharePoint. Nada foi alterado."
+        caminho = sp["file_path"].strip("/")
+        if sp.get("drive_id"):
+            alvo, rel = f"{GRAPH}/drives/{sp['drive_id']}", caminho
+        else:
+            site = requests.get(f"{GRAPH}/sites/{sp['site_hostname']}:/{sp['site_path'].strip('/')}",
+                                headers=h, timeout=TIMEOUT)
+            if site.status_code != 200:
+                return False, f"Site do SharePoint não encontrado ({site.status_code})."
+            sid = site.json()["id"]
+            alvo, rel = f"{GRAPH}/sites/{sid}/drive", caminho
+            primeiro, _, resto = caminho.partition("/")
+            lista = requests.get(f"{GRAPH}/sites/{sid}/drives", headers=h, timeout=TIMEOUT)
+            if lista.status_code == 200 and resto:
+                for dr in lista.json().get("value", []):
+                    if dr.get("name", "").lower() == primeiro.lower():
+                        alvo, rel = f"{GRAPH}/drives/{dr['id']}", resto
+        modelo = os.path.join(os.path.dirname(os.path.abspath(__file__)), "modelos",
+                              "Controle de Simulações - Calculadora Comercial.xlsx")
+        with open(modelo, "rb") as f:
+            conteudo = f.read()
+        up = requests.put(f"{alvo}/root:/{quote(rel)}:/content?@microsoft.graph.conflictBehavior=fail",
+                          headers=dict(h, **{"Content-Type": "application/octet-stream"}),
+                          data=conteudo, timeout=60)
+        if up.status_code in (200, 201):
+            return True, f"Planilha criada no SharePoint em {caminho}."
+        return False, f"Não foi possível criar a planilha ({up.status_code}): {up.text[:150]}"
+    except requests.RequestException as exc:
+        return False, f"Falha de conexão com o SharePoint: {exc}"
+
+
 def testar_integracao(st):
     """Verificação sem gravar nada: login do aplicativo, planilha e tabelas. Lista de (ok, mensagem)."""
     res = []
