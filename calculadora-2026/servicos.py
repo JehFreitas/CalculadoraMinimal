@@ -186,6 +186,30 @@ def _localizar_planilha(sp, h):
         if arq.status_code == 200:
             return drive, arq.json()["id"], None
         ultimo = arq.status_code
+    # Não achou no caminho: procura o arquivo pelo nome nas bibliotecas do site.
+    nome = caminho.rsplit("/", 1)[-1]
+    if not sp.get("drive_id"):
+        bibliotecas, achados = [], []
+        if lista.status_code == 200:
+            for dr in lista.json().get("value", []):
+                bibliotecas.append(dr.get("name", ""))
+                busca = requests.get(f"{GRAPH}/drives/{dr['id']}/root/search(q='{quote(nome.rsplit('.', 1)[0])}')",
+                                     headers=h, timeout=TIMEOUT)
+                if busca.status_code != 200:
+                    continue
+                for it in busca.json().get("value", []):
+                    if it.get("name", "").lower() == nome.lower() and "file" in it:
+                        pasta = (it.get("parentReference", {}).get("path", "").split("root:", 1)[-1]).strip("/")
+                        achados.append((f"{GRAPH}/drives/{dr['id']}", it["id"],
+                                        "/".join(x for x in (dr.get("name", ""), pasta, nome) if x)))
+        if len(achados) == 1:
+            return achados[0][0], achados[0][1], None
+        if len(achados) > 1:
+            return None, None, ("Há mais de uma planilha com esse nome no site: "
+                                + "; ".join(a[2] for a in achados) + ". Ajuste file_path nos Secrets.")
+        return None, None, (f"Planilha não encontrada ({ultimo}): o arquivo \"{nome}\" não está no site. "
+                            f"Bibliotecas do site: {', '.join(bibliotecas) or '—'}. "
+                            "Suba o modelo na pasta Calculadora ou ajuste file_path nos Secrets.")
     return None, None, f"Planilha não encontrada ({ultimo}). Confira file_path nos Secrets."
 
 
@@ -302,7 +326,20 @@ def enviar_email(st, assunto, corpo_html, anexos, token=None, destinatarios=None
                           headers={"Authorization": f"Bearer {token}"}, json=msg, timeout=TIMEOUT)
         if r.status_code == 202:
             return True, "E-mail enviado ao ADM Comercial."
-        return False, f"Não foi possível enviar o e-mail ({r.status_code})."
+        try:
+            erro = r.json().get("error", {})
+        except ValueError:
+            erro = {}
+        cod, txt = erro.get("code", ""), (erro.get("message", "") or "")[:200]
+        if r.status_code in (502, 503, 504):
+            dica = "Serviço da Microsoft indisponível no momento. Tente de novo em alguns minutos."
+        elif r.status_code == 403:
+            dica = "Sem permissão para enviar por esta caixa: confira com o TI a permissão Mail.Send e a caixa autorizada."
+        elif r.status_code == 404:
+            dica = "Caixa remetente não encontrada: confira [email] remetente nos Secrets."
+        else:
+            dica = txt
+        return False, f"Não foi possível enviar o e-mail ({r.status_code}{', ' + cod if cod else ''}). {dica}"
     except requests.RequestException as exc:
         return False, f"Falha de conexão com o e-mail: {exc}"
 
