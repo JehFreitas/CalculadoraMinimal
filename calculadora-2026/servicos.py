@@ -75,6 +75,8 @@ def salvar_config_github(st, cfg, arquivo="config.json", autor="Tela de Parâmet
 # ------------------------------------------------------------------
 def _token_microsoft(st):
     ms = _secao(st, "microsoft")
+    if ms:
+        ms = {k: (str(v).strip() if isinstance(v, str) else v) for k, v in ms.items()}
     if not ms or any(not ms.get(k) for k in ("tenant_id", "client_id", "client_secret")):
         return None, "Aplicativo Microsoft 365 ainda não configurado (secrets [microsoft])."
     try:
@@ -85,7 +87,23 @@ def _token_microsoft(st):
                   "grant_type": "client_credentials"},
             timeout=TIMEOUT)
         if r.status_code != 200:
-            return None, f"Microsoft recusou o login do aplicativo ({r.status_code})."
+            try:
+                j = r.json()
+            except ValueError:
+                j = {}
+            codigos = j.get("error_codes") or []
+            dicas = {
+                7000215: "o client_secret não confere: cole o VALOR do segredo (não o ID do segredo).",
+                7000222: "o client_secret expirou: peça um novo ao TI.",
+                700016: "o client_id não foi encontrado neste tenant: confira o client_id.",
+                90002: "o tenant_id não foi encontrado: confira o tenant_id.",
+                900023: "o tenant_id está em formato inválido: confira o tenant_id.",
+                7000216: "faltou o client_secret.",
+            }
+            dica = next((dicas[c] for c in codigos if c in dicas), None)
+            detalhe = dica or (j.get("error_description", "") or "").split("\r\n")[0][:200]
+            return None, (f"Microsoft recusou o login do aplicativo ({r.status_code}"
+                          + (f", AADSTS{codigos[0]}" if codigos else "") + f"): {detalhe}")
         return r.json()["access_token"], None
     except requests.RequestException as exc:
         return None, f"Falha de conexão com a Microsoft: {exc}"
