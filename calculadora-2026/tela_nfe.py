@@ -178,7 +178,7 @@ def parametros_comerciais(pid):
         st.caption("O vendedor só vê as condições com situação Disponível: ativas, não exclusivas de cliente "
                    "e com o % do Focco igual ao calculado (sem política no Focco = 0%), ou marcadas "
                    "para usar o % do Focco. "
-                   "As demais ele pede ao ADM Comercial.")
+                   "As demais ele solicita a Custos.")
         df = st.data_editor(pd.DataFrame(linhas), num_rows="dynamic", hide_index=True, key=f"{pid}_c_cond",
                             disabled=["Prazo médio", "Calculado (%)", "Aplicado (%)", "Situação"])
         novo["condicoes"] = [
@@ -315,8 +315,8 @@ def render(ano):
                      format_func=lambda cod: descontos.rotulo_condicao(conds[cod], com),
                      placeholder="Selecione",
                      help="Só aparecem as condições cadastradas no Focco com o % conferido. "
-                          "Se a condição não estiver na lista, peça o cálculo ao ADM Comercial.")
-        st.caption("A condição não está na lista? Peça o cálculo ao ADM Comercial antes de seguir.")
+                          "Se a condição não estiver na lista, solicite o cálculo a Custos.")
+        st.caption("A condição não está na lista? Solicite o cálculo a Custos (custos@minimaldesign.com.br) antes de seguir.")
         c1, c2 = st.columns(2)
         c1.selectbox("Equipe do vendedor *", list(limites.keys()), index=None, key=k("equipe"),
                      placeholder="Selecione",
