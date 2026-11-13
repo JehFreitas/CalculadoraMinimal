@@ -81,30 +81,36 @@ def fmt_br(valor, casas=2):
 
 def campo_numero(rotulo, chave, casas=2, minimo=0.0, maximo=None, help=None, placeholder=None, container=None):
     """Campo de texto para valores em formato brasileiro (ponto no milhar, vírgula no decimal).
-    Aceita valores colados em qualquer formato e reescreve no padrão. O número fica em
-    st.session_state[chave] (float ou None); o texto, em chave + '_txt'."""
+    Aceita valores colados em qualquer formato e reescreve no padrão. O texto fica em
+    chave + '_txt'; o número é recalculado do texto a cada execução e guardado em
+    st.session_state[chave] (float ou None)."""
     ss = st.session_state
     tk = chave + "_txt"
-    if ss.get(chave) is not None and not ss.get(tk):
+    if tk not in ss and isinstance(ss.get(chave), (int, float)):
         ss[tk] = fmt_br(float(ss[chave]), casas)
 
-    def ao_mudar():
-        txt = ss.get(tk) or ""
+    def ler(txt):
+        txt = txt or ""
         if maximo is not None and maximo <= 100 and txt.count(".") == 1 and "," not in txt:
             txt = txt.replace(".", ",")          # percentual: ponto sozinho é decimal (18.8532)
         v = numero_br(txt)
         if v is not None and (v < minimo or (maximo is not None and v > maximo)):
             v = None
-        ss[chave] = v
+        return v
+
+    def ao_mudar():
+        v = ler(ss.get(tk))
         if v is not None:
             ss[tk] = fmt_br(v, casas)
 
     (container or st).text_input(rotulo, key=tk, on_change=ao_mudar, help=help,
                                  placeholder=placeholder or ("0," + "0" * casas))
-    if (ss.get(tk) or "").strip() and ss.get(chave) is None:
+    v = ler(ss.get(tk))
+    ss[chave] = v
+    if (ss.get(tk) or "").strip() and v is None:
         (container or st).caption(":red[Valor não reconhecido. Exemplo: "
                                   + ("42.671,46" if casas == 2 else "18,8532") + "]")
-    return ss.get(chave)
+    return v
 
 
 def md(texto):
