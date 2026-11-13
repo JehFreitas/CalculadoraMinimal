@@ -575,10 +575,10 @@ def render(ano):
     sem_ie = e["contribuinte"] == NAO_CONTRIBUINTE
 
     rot_emb = "DIFAL/FCP embutido" if sem_ie else "ICMS sobre IPI embutido (consumidor final)"
-    linhas_nf = [("Valor dos itens na NF (vProd)", r["valor_itens_nf"]),
-                 ("  · produtos", r["valor_produtos"])]
+    linhas_nf = [("Valor dos itens na NF (vProd)", r["valor_itens_nf"])]
     if r["difal_fcp_embutido"]:
-        linhas_nf.append((f"  · {rot_emb}", r["difal_fcp_embutido"]))
+        linhas_nf += [("  · produtos", r["valor_produtos"]),
+                      (f"  · {rot_emb}", r["difal_fcp_embutido"])]
     if r["frete_nf"]:
         linhas_nf.append(("Frete (vFrete)", r["frete_nf"]))
     if r["despesas_acessorias_nf"]:
