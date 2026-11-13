@@ -56,6 +56,12 @@ with st.sidebar:
                 import servicos
                 for ok, msg in servicos.testar_integracao(st):
                     (st.success if ok else st.error)(msg)
+            st.caption("Se a planilha ainda não existir no SharePoint, a calculadora pode criá-la "
+                       "a partir do modelo, no caminho configurado. Nunca substitui uma planilha existente.")
+            if st.button("Criar planilha no SharePoint"):
+                import servicos
+                ok, msg = servicos.criar_planilha(st)
+                (st.success if ok else st.warning)(msg)
             st.caption("Envia um e-mail de teste só para o remetente configurado.")
             if st.button("Enviar e-mail de teste"):
                 import servicos
