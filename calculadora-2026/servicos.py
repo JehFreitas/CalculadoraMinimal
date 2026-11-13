@@ -5,6 +5,7 @@
 import base64
 import csv
 import io
+import re
 import json
 import os
 from urllib.parse import quote
@@ -77,6 +78,13 @@ def _token_microsoft(st):
     ms = _secao(st, "microsoft")
     if ms:
         ms = {k: (str(v).strip() if isinstance(v, str) else v) for k, v in ms.items()}
+        # tenant_id e client_id são GUIDs: aproveita só o GUID, mesmo se vier com
+        # caracteres invisíveis, aspas tipográficas ou texto a mais copiado do e-mail.
+        for chave in ("tenant_id", "client_id"):
+            achado = re.search(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+                               str(ms.get(chave) or ""))
+            if achado:
+                ms[chave] = achado.group(0)
     if not ms or any(not ms.get(k) for k in ("tenant_id", "client_id", "client_secret")):
         return None, "Aplicativo Microsoft 365 ainda não configurado (secrets [microsoft])."
     try:
