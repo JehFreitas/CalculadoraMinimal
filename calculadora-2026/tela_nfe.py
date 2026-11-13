@@ -236,6 +236,19 @@ def render(ano):
     pode_calcular = liberado or comum.adm_logado()
 
     # ---------------- Consulta pelo CNPJ ----------------
+    def consultar_entrega():
+        dados = consulta.consultar(ss.get(k("cnpj_entrega"), ""), servicos.token_cnpja(st))
+        dados["cnpj"] = consulta.so_digitos(ss.get(k("cnpj_entrega"), ""))
+        ss[k("consulta_entrega")] = dados
+        if not dados.get("ok"):
+            return
+        if dados.get("endereco"):
+            ss[k("end_entrega")] = dados["endereco"]
+        if dados.get("estado") in cfg["estados"]:
+            ss[k("estado")] = dados["estado"]
+        if dados.get("cidade"):
+            ss[k("cidade")] = dados["cidade"]
+
     def consultar_cnpj():
         dados = consulta.consultar(ss.get(k("cnpj"), ""), servicos.token_cnpja(st))
         dados["cnpj"] = consulta.so_digitos(ss.get(k("cnpj"), ""))
@@ -288,9 +301,25 @@ def render(ano):
                     st.radio("O endereço de entrega e de faturamento é este e está correto? *",
                              [END_SIM, END_NAO], index=None, key=k("end_confirma"), horizontal=True)
                     if ss.get(k("end_confirma")) == END_NAO:
+                        e1, e2 = st.columns([3, 1], vertical_alignment="bottom")
+                        e1.text_input("CNPJ do local de entrega *", key=k("cnpj_entrega"),
+                                      placeholder="00.000.000/0000-00")
+                        e2.button("🔎 Consultar entrega", on_click=consultar_entrega, width="stretch",
+                                  key=k("btn_cnpj_entrega"))
+                        ce = ss.get(k("consulta_entrega")) or {}
+                        if ce and ce.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj_entrega"), "")):
+                            if ce.get("ok"):
+                                st.success(f"**{ce['razao_social']}**  \n"
+                                           f"Endereço: {ce.get('endereco') or '—'}  \n"
+                                           f"Situação: {ce.get('situacao') or '—'}"
+                                           + (f" · Inscrição estadual: {ce['ie_texto']}" if ce.get("ie_texto") else ""))
+                                if ce.get("situacao") and "ativa" not in ce["situacao"].lower():
+                                    st.warning(f"CNPJ da entrega com situação {ce['situacao']}. Confirme com o ADM Comercial.")
+                            else:
+                                st.warning(ce.get("erro", "Consulta indisponível.") + " Informe o endereço abaixo.")
                         st.text_input("Endereço de entrega *", key=k("end_entrega"),
                                       placeholder="Rua, número, bairro, cidade/UF, CEP")
-                        st.info("Ajuste o estado e a cidade de destino abaixo para o local de entrega: "
+                        st.info("O estado e a cidade de destino abaixo seguem o local de entrega: "
                                 "frete, montagem e DIFAL são calculados pelo destino. "
                                 "Se o faturamento também for em outro endereço, fale com o ADM Comercial.")
                 if cons.get("situacao") and "ativa" not in cons["situacao"].lower():
@@ -482,8 +511,11 @@ def render(ano):
         if consulta_atual().get("endereco"):
             if not ss.get(k("end_confirma")):
                 f.append("Confirmação do endereço de entrega e faturamento")
-            elif ss.get(k("end_confirma")) == END_NAO and not (ss.get(k("end_entrega")) or "").strip():
-                f.append("Endereço de entrega")
+            elif ss.get(k("end_confirma")) == END_NAO:
+                if not consulta.cnpj_valido(consulta.so_digitos(ss.get(k("cnpj_entrega"), ""))):
+                    f.append("CNPJ do local de entrega")
+                if not (ss.get(k("end_entrega")) or "").strip():
+                    f.append("Endereço de entrega")
         if not ss.get(k("estado")):
             f.append("Estado de destino")
         if not ss.get(k("cidade")):
@@ -578,8 +610,15 @@ def render(ano):
         end = consulta_atual().get("endereco", "")
         entrega = ""
         if end:
-            entrega = ("Mesmo do faturamento (confirmado)" if ss.get(k("end_confirma")) == END_SIM
-                       else (ss.get(k("end_entrega")) or "").strip())
+            if ss.get(k("end_confirma")) == END_SIM:
+                entrega = "Mesmo do faturamento (confirmado)"
+            else:
+                ce = ss.get(k("consulta_entrega")) or {}
+                cnpj_e = consulta.so_digitos(ss.get(k("cnpj_entrega"), ""))
+                nome_e = ce.get("razao_social", "") if ce.get("ok") and ce.get("cnpj") == cnpj_e else ""
+                entrega = (f"CNPJ {consulta.formatar_cnpj(cnpj_e)}" + (f" ({nome_e})" if nome_e else "")
+                           + f" · {(ss.get(k('end_entrega')) or '').strip()}") if cnpj_e else \
+                    (ss.get(k("end_entrega")) or "").strip()
         return dict(vendedor=ss.get(k("vendedor"), ""), cliente=ss.get(k("cliente"), ""),
                     orcamento=ss.get(k("orcamento"), ""), endereco=end, entrega=entrega)
 
