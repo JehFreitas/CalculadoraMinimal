@@ -381,6 +381,22 @@ def render(ano):
                                "Desconto (%)": st.column_config.NumberColumn(min_value=0.0, max_value=100.0,
                                                                               format="%.4f")})
 
+        ipi_pad = float(cfg["impostos"].get("ipi") or 0)
+        st.checkbox(f"Alguns itens têm IPI diferente de {ipi_pad:g}%".replace(".", ","), key=k("tem_ipi"),
+                    help="Raro. Informe só os itens com IPI diferente; os demais usam o IPI padrão.")
+        if ss.get(k("tem_ipi")):
+            st.caption("Valor do item = valor unitário de tabela × quantidade, sem desconto. "
+                       "Se o item também tem desconto diferente, use o mesmo nome nas duas listas.")
+            base_ipi = pd.DataFrame({"Item": pd.Series(dtype="str"),
+                                     "Valor de tabela (R$)": pd.Series(dtype="float"),
+                                     "IPI (%)": pd.Series(dtype="float")})
+            st.data_editor(base_ipi, num_rows="dynamic", hide_index=True, key=k("ipi_editor"),
+                           column_config={
+                               "Item": st.column_config.TextColumn("Item (nº ou descrição)"),
+                               "Valor de tabela (R$)": st.column_config.NumberColumn(min_value=0.0, format="%.2f"),
+                               "IPI (%)": st.column_config.NumberColumn(min_value=0.0, max_value=100.0,
+                                                                         format="%.2f")})
+
     with st.container(border=True):
         st.subheader("4. Frete e montagem")
         c1, c2 = st.columns(2)
@@ -414,10 +430,19 @@ def render(ano):
                         help="O orçamento é montado normalmente. Depois o ADM Comercial cria o pedido de "
                              "serviço e ajusta o pedido de produtos com os valores calculados aqui.")
 
+    def ipi_itens_atuais():
+        if not ss.get(k("tem_ipi")):
+            return []
+        return [dict(item=x["item"], valor=x["valor"], ipi=x["pct"])
+                for x in linhas_editor("ipi_editor", "IPI (%)")]
+
     def excecoes_atuais():
         if not ss.get(k("tem_exc")):
             return []
-        est = ss.get(k("exc_editor")) or {}
+        return linhas_editor("exc_editor", "Desconto (%)")
+
+    def linhas_editor(chave, col_pct):
+        est = ss.get(k(chave)) or {}
         linhas = [dict(l) for l in est.get("added_rows", [])]
         for i, mud in (est.get("edited_rows") or {}).items():
             if int(i) < len(linhas):
@@ -427,7 +452,7 @@ def render(ano):
         for i, l in enumerate(linhas):
             if i in apagar:
                 continue
-            v, pct_i = l.get("Valor de tabela (R$)"), l.get("Desconto (%)")
+            v, pct_i = l.get("Valor de tabela (R$)"), l.get(col_pct)
             if v is None and pct_i is None and not l.get("Item"):
                 continue
             out.append(dict(item=str(l.get("Item") or f"Item {i + 1}"), valor=v, pct=pct_i))
@@ -473,6 +498,14 @@ def render(ano):
                 f.append(f"Desconto de cada item dentro do limite da equipe ({lim:g}%)".replace(".", ","))
             if sum((x["valor"] or 0) for x in exc) > (ss.get(k("total_tabela")) or 0) + 0.005:
                 f.append("Soma dos itens com desconto diferente até o Total Itens")
+        if ss.get(k("tem_ipi")):
+            itens_ipi = ipi_itens_atuais()
+            if not itens_ipi:
+                f.append("Itens com IPI diferente (ou desmarque a opção)")
+            if any(x["valor"] is None or x["ipi"] is None for x in itens_ipi):
+                f.append("Valor e IPI de cada item com IPI diferente")
+            if sum((x["valor"] or 0) for x in itens_ipi) > (ss.get(k("total_tabela")) or 0) + 0.005:
+                f.append("Soma dos itens com IPI diferente até o Total Itens")
         if (ss.get(k("modo_pol")) == MODO_PCT and lim is not None and ss.get(k("politica")) is not None
                 and ss.get(k("politica")) > lim):
             f.append(f"Desconto da política dentro do limite da equipe ({lim:g}%)".replace(".", ","))
@@ -499,6 +532,7 @@ def render(ano):
             faixa=ss.get(k("faixa")) if modo == MODO_COM else None,
             alvo=ss.get(k("alvo")) if modo == MODO_ALVO else None,
             excecoes=excecoes_atuais(),
+            ipi_itens=ipi_itens_atuais(),
             estado=ss.get(k("estado")),
             cidade=ss.get(k("cidade")),
             horario="Fora do comercial" if sp_capital else None,   # SP Capital: custo a 4%
@@ -549,7 +583,9 @@ def render(ano):
                 e, cfg, motor, e["total_tabela"], cond_pct, lim_ef,
                 "valor_final" if e["modo_pol"] == MODO_ALVO else "percentual",
                 politica=pol_in, alvo=e["alvo"],
-                excecoes=[(x["valor"], x["pct"]) for x in e["excecoes"]])
+                excecoes=[(x["valor"], x["pct"]) for x in e["excecoes"]],
+                ipi_itens=[(x["item"], x["valor"], x["ipi"]) for x in e["ipi_itens"]],
+                nomes_excecoes=[x["item"] for x in e["excecoes"]])
             pol_ef = descontos.politica_efetiva(e["total_tabela"], cond_pct, r["valor_produtos"])
             # Teste no Focco: a política da capa incide sobre o que é lançado aos itens;
             # a política lançada em cada item (exceções) não incide. Só compensa no 1º caso.
@@ -559,7 +595,7 @@ def render(ano):
                      limite=lim_ef, aviso_politica=aviso_pol,
                      politica_efetiva=pol_ef, erp=descontos.lancamentos_erp(r, pol_comp, com))
             if e["dividir"]:
-                dv = descontos.dividir(r, com, cfg["impostos"]["ipi"], pol_comp)
+                dv = descontos.dividir(r, com, r["ipi_pct"], pol_comp)
                 prop = dv["total_produtos"] / r["total_nf"] if r["total_nf"] else 0
                 dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
                 r["divisao"] = dv
@@ -603,7 +639,8 @@ def render(ano):
         linhas_nf.append(("Frete (vFrete)", r["frete_nf"]))
     if r["despesas_acessorias_nf"]:
         linhas_nf.append(("Despesas acessórias · montagem (vOutro)", r["despesas_acessorias_nf"]))
-    linhas_nf.append(("Valor do IPI", r["ipi"]))
+    linhas_nf.append((("Valor do IPI" if not e.get("ipi_itens") else
+                       f"Valor do IPI (média {float(r['ipi_pct']):.2f}%)".replace(".", ",")), r["ipi"]))
     if ano == "2027":
         linhas_nf += [("CBS (por fora)", r["cbs"]), ("IBS (por fora)", r["ibs"])]
     linhas_nf.append(("Valor total da NF", r["total_nf"]))
@@ -749,6 +786,9 @@ def render(ano):
            *([("Itens com desconto diferente:", " · ".join(
                f"{x['item']}: {formatar(x['valor'])} a " + f"{float(x['pct']):.4f}%".replace(".", ",")
                for x in e["excecoes"]))] if e.get("excecoes") else []),
+           *([("Itens com IPI diferente:", " · ".join(
+               f"{x['item']}: {formatar(x['valor'])} com IPI " + f"{float(x['ipi']):.2f}%".replace(".", ",")
+               for x in e["ipi_itens"]))] if e.get("ipi_itens") else []),
            ("Frete:", e["frete_opcao"]),
            ("Montagem:", e["montagem_opcao"])]
     if e["km_ida_volta"]:
