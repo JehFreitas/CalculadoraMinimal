@@ -156,10 +156,11 @@ def parametros_comerciais(pid):
         novo["limites_politica"] = {str(r["Equipe"]).strip(): float(r["Limite (%)"])
                                     for _, r in lim.iterrows() if str(r["Equipe"]).strip() and not pd.isna(r["Limite (%)"])}
         novo["politica_desconta_acrescimos_aos_itens"] = st.checkbox(
-            "A política do ERP desconta também os acréscimos aos itens (DIFAL/FCP)",
+            "Política da capa lançada \"Aplicável ao Pedido\" (compensar DIFAL/FCP e desconto SERVIÇO)",
             value=novo.get("politica_desconta_acrescimos_aos_itens", False), key=f"{pid}_c_desc",
-            help="Marque se o teste no ERP mostrar que o desconto da política reduz os acréscimos "
-                 "lançados aos itens. A calculadora passa a informar o DIFAL/FCP já compensado.")
+            help="Testes no Focco: com a política da capa \"Aplicável ao Pedido\", ela também incide sobre o que "
+                 "é lançado aos itens (DIFAL, FCP, desconto SERVIÇO) e a calculadora precisa compensar. "
+                 "Com a política \"Aplicável aos Itens\" (padrão da calculadora) ou por item, não incide: deixe desmarcado.")
 
         st.subheader("Condições")
         st.caption("Parcelas: prazo em DDF (ou SINAL) e % da parcela, separadas por ponto e vírgula. "
