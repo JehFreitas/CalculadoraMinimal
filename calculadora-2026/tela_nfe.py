@@ -416,13 +416,13 @@ def render(ano):
             if ss.get(k("frete_opcao")) == "Informar valor negociado":
                 comum.campo_numero("Valor negociado do frete *", k("frete_negociado"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
                 st.file_uploader("Print da cotação do frete *", type=["png", "jpg", "jpeg"], key=k("cot_frete"),
-                                 help="Imagem da cotação confirmada pela Lia. Vai no PDF do ADM.")
+                                 help="Imagem da cotação confirmada pela Lia. Vai no PDF da simulação.")
         with c2:
             st.radio("Montagem *", OPCOES, index=None, key=k("montagem_opcao"))
             if ss.get(k("montagem_opcao")) == "Informar valor negociado":
                 comum.campo_numero("Valor negociado da montagem *", k("montagem_negociada"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
                 st.file_uploader("Print da cotação da montagem *", type=["png", "jpg", "jpeg"], key=k("cot_montagem"),
-                                 help="Imagem da cotação confirmada pela Lia. Vai no PDF do ADM.")
+                                 help="Imagem da cotação confirmada pela Lia. Vai no PDF da simulação.")
             if ss.get(k("montagem_opcao")) == "Calcular" and estado and cidade and not sp_capital:
                 st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0,
                                 value=None, format="%.0f", key=k("km_ida_volta"))
@@ -913,7 +913,7 @@ def render(ano):
                      f"Cálculo resolvido em {r['iteracoes']} rodada(s)."]
         return comum.gerar_pdf(versao + (" · Adm Comercial" if admin else ""), cab, blocos, notas,
                                senha=comum.senha_adm() if admin else None, focco=quadros_focco(),
-                               blocos_finais=finais, imagens=cotacoes() if admin else ())
+                               blocos_finais=finais, imagens=cotacoes())
 
     base = comum.nome_base(meta)
     st.download_button("📄 Baixar PDF do Resultado", data=pdf(False), file_name=f"{base}.pdf",
