@@ -78,7 +78,7 @@ with st.sidebar:
             st.session_state.adm_ok = False
             st.rerun()
     elif senha_cfg:
-        with st.expander("🔐 Área do Adm Comercial"):
+        with st.expander("🔐 Área restrita"):
             senha = st.text_input("Senha", type="password", key="senha_adm_input")
             if st.button("Entrar"):
                 if senha == senha_cfg:
