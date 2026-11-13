@@ -720,7 +720,12 @@ def render(ano):
            ("Perfil fiscal:", e["contribuinte"] + (f" · {e['finalidade']}" if e["finalidade"] else "")),
            ("Condição:", f"{r['cond_rotulo']} ({cond_txt})"),
            ("Política:", f"{r['politica_pct']:.4f}%".replace(".", ",") + f" · {e['equipe']}"
-                         + (f" · valor desejado {formatar(e['alvo'])}" if e.get("alvo") else "")),
+                         + (f" · valor desejado {formatar(e['alvo'])}" if e.get("alvo") else "")
+                         + (" · pela comissão escolhida" if e.get("modo_pol") == MODO_COM else "")),
+           *([("Comissão:", f"faixa de {float(r['comissao']['pct']):g}%".replace(".", ",")
+                            + f" · {e['divisao_venda']}"
+                            + (f" (inclui {float(r['comissao']['adicional']):g}% pela divisão)".replace(".", ",")
+                               if r["comissao"]["adicional"] else ""))] if r.get("comissao") else []),
            *([("Itens com desconto diferente:", " · ".join(
                f"{x['item']}: {formatar(x['valor'])} a " + f"{float(x['pct']):.4f}%".replace(".", ",")
                for x in e["excecoes"]))] if e.get("excecoes") else []),
