@@ -139,11 +139,19 @@ def _de_cnpja(j, fonte, com_ie):
         else:
             ie_txt = "Sem inscrição estadual"
 
+    partes = [end.get("street"), end.get("number"), end.get("details"), end.get("district")]
+    endereco = ", ".join(str(p).strip() for p in partes if p and str(p).strip())
+    if cidade or uf:
+        endereco += f" · {cidade}/{uf}"
+    if end.get("zip"):
+        z = so_digitos(str(end["zip"]))
+        endereco += f" · CEP {z[:5]}-{z[5:]}" if len(z) == 8 else f" · CEP {z}"
     atv = j.get("mainActivity") or {}
     cnae = str(atv.get("id") or "").zfill(7) if atv.get("id") else ""
     return dict(
         ok=bool(uf), fonte=fonte, data_hora=_agora(),
         cnae=cnae, cnae_texto=atv.get("text") or "", cnae_alerta=alerta_cnae(cnae),
+        endereco=endereco,
         razao_social=comp.get("name") or "", situacao=status,
         uf=uf, estado=UF_NOME.get(uf), municipio=cidade,
         cidade=capital_ou_interior(uf, cidade),
@@ -158,9 +166,16 @@ def _de_brasilapi(j):
     simples = j.get("opcao_pelo_simples")
     mei = j.get("opcao_pelo_mei")
     cnae = str(j.get("cnae_fiscal") or "").zfill(7) if j.get("cnae_fiscal") else ""
+    tipo = (j.get("descricao_tipo_de_logradouro") or "").strip()
+    partes = [f"{tipo} {j.get('logradouro') or ''}".strip(), j.get("numero"), j.get("complemento"), j.get("bairro")]
+    endereco = ", ".join(str(p).strip() for p in partes if p and str(p).strip())
+    endereco += f" · {cidade.title()}/{uf}" if (cidade or uf) else ""
+    z = so_digitos(str(j.get("cep") or ""))
+    endereco += f" · CEP {z[:5]}-{z[5:]}" if len(z) == 8 else ""
     return dict(
         ok=bool(uf), fonte="BrasilAPI (gratuita)", data_hora=_agora(),
         cnae=cnae, cnae_texto=j.get("cnae_fiscal_descricao") or "", cnae_alerta=alerta_cnae(cnae),
+        endereco=endereco,
         razao_social=j.get("razao_social") or "", situacao=j.get("descricao_situacao_cadastral") or "",
         uf=uf, estado=UF_NOME.get(uf), municipio=cidade.title(),
         cidade=capital_ou_interior(uf, cidade),

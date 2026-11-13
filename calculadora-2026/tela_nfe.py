@@ -20,6 +20,8 @@ OPCOES = ["Calcular", "Informar valor negociado", "Não contratar"]
 MODO_PCT = "Informar o % da política"
 MODO_ALVO = "Informar o valor final desejado"
 MODO_COM = "Escolher a comissão desejada"
+END_SIM = "Sim, entrega e faturamento neste endereço"
+END_NAO = "Não, a entrega é em outro endereço"
 CHAVE_COM = "cfg_comercial"
 
 MODULOS = {
@@ -276,10 +278,21 @@ def render(ano):
                 if cons.get("cnae"):
                     c = cons["cnae"]
                     linhas.append(f"Atividade principal: {c[:4]}-{c[4]}/{c[5:]} {cons.get('cnae_texto', '')}")
+                if cons.get("endereco"):
+                    linhas.append(f"Endereço: {cons['endereco']}")
                 if cons.get("ie_texto"):
                     linhas.append(f"Inscrição estadual: {cons['ie_texto']}")
                 linhas.append(f"Consulta em {cons['data_hora']} · {cons['fonte']}")
                 st.success("  \n".join(linhas))
+                if cons.get("endereco"):
+                    st.radio("O endereço de entrega e de faturamento é este e está correto? *",
+                             [END_SIM, END_NAO], index=None, key=k("end_confirma"), horizontal=True)
+                    if ss.get(k("end_confirma")) == END_NAO:
+                        st.text_input("Endereço de entrega *", key=k("end_entrega"),
+                                      placeholder="Rua, número, bairro, cidade/UF, CEP")
+                        st.info("Ajuste o estado e a cidade de destino abaixo para o local de entrega: "
+                                "frete, montagem e DIFAL são calculados pelo destino. "
+                                "Se o faturamento também for em outro endereço, fale com o ADM Comercial.")
                 if cons.get("situacao") and "ativa" not in cons["situacao"].lower():
                     st.warning(f"Situação cadastral: {cons['situacao']}. Confirme com o Adm antes de seguir.")
                 if cons.get("suframa"):
@@ -459,8 +472,18 @@ def render(ano):
         return out
 
     # ---------------- Validação e cálculo ----------------
+    def consulta_atual():
+        cons = ss.get(k("consulta")) or {}
+        ok = cons.get("ok") and cons.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj"), ""))
+        return cons if ok else {}
+
     def faltando():
         f = []
+        if consulta_atual().get("endereco"):
+            if not ss.get(k("end_confirma")):
+                f.append("Confirmação do endereço de entrega e faturamento")
+            elif ss.get(k("end_confirma")) == END_NAO and not (ss.get(k("end_entrega")) or "").strip():
+                f.append("Endereço de entrega")
         if not ss.get(k("estado")):
             f.append("Estado de destino")
         if not ss.get(k("cidade")):
@@ -548,8 +571,13 @@ def render(ano):
         )
 
     def meta_atual():
+        end = consulta_atual().get("endereco", "")
+        entrega = ""
+        if end:
+            entrega = ("Mesmo do faturamento (confirmado)" if ss.get(k("end_confirma")) == END_SIM
+                       else (ss.get(k("end_entrega")) or "").strip())
         return dict(vendedor=ss.get(k("vendedor"), ""), cliente=ss.get(k("cliente"), ""),
-                    orcamento=ss.get(k("orcamento"), ""))
+                    orcamento=ss.get(k("orcamento"), ""), endereco=end, entrega=entrega)
 
     def origem_dados(e):
         cons = ss.get(k("consulta"))
@@ -773,6 +801,7 @@ def render(ano):
     cab = [("Data:", meta["data"].strftime("%d/%m/%Y") if meta["data"] else ""),
            ("Vendedor:", meta["vendedor"]), ("Cliente:", meta["cliente"]),
            ("CNPJ:", meta["cnpj"]), ("Orçamento:", meta["orcamento"]),
+           *([("Endereço:", meta["endereco"]), ("Entrega:", meta["entrega"])] if meta.get("endereco") else []),
            ("Destino:", f"{e['estado']} · {e['cidade']}"),
            ("Perfil fiscal:", e["contribuinte"] + (f" · {e['finalidade']}" if e["finalidade"] else "")),
            ("Condição:", f"{r['cond_rotulo']} ({cond_txt})"),
@@ -903,7 +932,9 @@ def render(ano):
         pdf_adm = pdf(True)
         assunto = f"Simulação {versao} · {meta['orcamento']} · {meta['cliente']} · {meta['vendedor']}"
         corpo = (f"<p>Simulação enviada pela Calculadora Comercial ({versao}) em {quando}.</p>"
-                 "<table cellpadding='4'>"
+                 + (f"<p>Endereço: {meta['endereco']}<br>Entrega: {meta['entrega']}</p>"
+                    if meta.get("endereco") else "")
+                 + "<table cellpadding='4'>"
                  + "".join(f"<tr><td>{t.strip()}</td><td><b>{formatar(v)}</b></td></tr>" for t, v in linhas_nf)
                  + f"<tr><td>A pagar à transportadora</td><td>{formatar(r['frete_custo'])}</td></tr>"
                  f"<tr><td>A pagar à montadora</td><td>{formatar(r['montagem_custo'])}</td></tr>"
