@@ -373,15 +373,19 @@ def render(ano):
             st.radio("Frete *", OPCOES, index=None, key=k("frete_opcao"))
             if ss.get(k("frete_opcao")) == "Informar valor negociado":
                 st.number_input("Valor negociado do frete *", min_value=0.0, value=None,
-                                format="%.2f", key=k("frete_negociado"))
+                                format="%.2f", key=k("frete_negociado"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
         with c2:
             st.radio("Montagem *", OPCOES, index=None, key=k("montagem_opcao"))
             if ss.get(k("montagem_opcao")) == "Informar valor negociado":
                 st.number_input("Valor negociado da montagem *", min_value=0.0, value=None,
-                                format="%.2f", key=k("montagem_negociada"))
+                                format="%.2f", key=k("montagem_negociada"), help="Custo do fornecedor confirmado com a Lia, sem impostos. A calculadora soma os impostos; ao cliente vai o valor com imposto.")
             if ss.get(k("montagem_opcao")) == "Calcular" and estado and cidade and not sp_capital:
                 st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0,
                                 value=None, format="%.0f", key=k("km_ida_volta"))
+        if "Informar valor negociado" in (ss.get(k("frete_opcao")), ss.get(k("montagem_opcao"))):
+            st.info("Valor negociado com o fornecedor: confirme o valor com a Lia antes de informar. "
+                    "Digite o custo do fornecedor; a calculadora inclui os impostos e o cliente "
+                    "recebe o valor com imposto.")
         st.caption("Frete: sempre ao pedido, no campo de frete da NF · Montagem: sempre ao pedido, "
                    "em despesas acessórias"
                    + (" · DIFAL/FCP: sempre embutido nos itens" if ss.get(k("contribuinte")) == NAO_CONTRIBUINTE else "")
