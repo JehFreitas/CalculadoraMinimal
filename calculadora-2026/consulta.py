@@ -132,7 +132,11 @@ def _de_cnpja(j, fonte, com_ie):
         ativas = [r for r in regs if r.get("enabled")]
         ie = bool(ativas)
         if ativas:
-            ie_txt = ", ".join(f"{r.get('number')} ({r.get('state')})" for r in ativas)
+            def _desc(r):
+                st_ = (r.get("status") or {}).get("text") or "Habilitada"
+                tp = (r.get("type") or {}).get("text") or ""
+                return f"{r.get('number')} ({r.get('state')}) · {st_}" + (f" · {tp}" if tp else "")
+            ie_txt = ", ".join(_desc(r) for r in ativas) + " · fonte: CCC"
         elif regs:
             ie_txt = "IE não habilitada: " + ", ".join(
                 f"{r.get('number')} ({(r.get('status') or {}).get('text', '')})" for r in regs)
