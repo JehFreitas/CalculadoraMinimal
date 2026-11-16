@@ -239,17 +239,23 @@ def render(ano):
     pode_calcular = liberado or comum.adm_logado()
 
     # ---------------- Consulta pelo CNPJ ----------------
-    def calcular_km():
-        cons = consulta_atual()
-        if cons.get("endereco") and ss.get(k("end_confirma")) == END_NAO:
-            destino = ss.get(k("end_entrega")) or ""
-        else:
-            destino = cons.get("endereco", "")
-        km, msg = servicos.distancia_km(st, destino)
+    def destino_km():
+        """Endereço de entrega para a rota da montagem ('' se não houver consulta do CNPJ)."""
+        cons = ss.get(k("consulta")) or {}
+        if not (cons.get("ok") and cons.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj"), ""))
+                and cons.get("endereco")):
+            return ""
+        if ss.get(k("end_confirma")) == END_NAO:
+            return (ss.get(k("end_entrega")) or "").strip()
+        return cons["endereco"]
+
+    def atualizar_km(dest, forcar=False):
+        if not forcar and ss.get(k("km_dest")) == dest:
+            return
+        km, msg = servicos.distancia_km(st, dest)
         if km is not None:
-            ss[k("km_ida_volta")] = km
-            msg += " · ida e volta: " + f"{km:,.0f}".replace(",", ".") + " km. Confira antes de calcular."
-        ss[k("km_msg")] = msg
+            msg += " · ida e volta: " + f"{km:,.0f}".replace(",", ".") + " km."
+        ss[k("km_dest")], ss[k("km_auto")], ss[k("km_msg")] = dest, km, msg
 
     def consultar_entrega():
         dados = consulta.consultar(ss.get(k("cnpj_entrega"), ""), servicos.token_cnpja(st))
@@ -477,13 +483,26 @@ def render(ano):
                 st.file_uploader("Print da cotação da montagem *", type=["png", "jpg", "jpeg"], key=k("cot_montagem"),
                                  help="Imagem da cotação confirmada pela Lia. Vai no PDF da simulação.")
             if ss.get(k("montagem_opcao")) == "Calcular" and estado and cidade and not sp_capital:
-                st.button("📍 Calcular km pelo endereço", key=k("btn_km"), on_click=calcular_km,
-                          help="Rota de rodovia da fábrica (Av. Henrique Gonçalves Baptista, 2035 – Barueri) "
-                               "até o endereço de entrega, ida e volta.")
-                st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0,
-                                value=None, format="%.0f", key=k("km_ida_volta"))
-                if ss.get(k("km_msg")):
-                    st.caption(ss[k("km_msg")])
+                dest = destino_km()
+                if dest:
+                    atualizar_km(dest)
+                km_auto = ss.get(k("km_auto")) if dest and ss.get(k("km_dest")) == dest else None
+                if km_auto is not None:
+                    # CNPJ consultado e rota calculada: o km vem do endereço e não pode ser alterado
+                    ss[k("km_ida_volta")] = km_auto
+                    st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0, format="%.0f",
+                                    key=k("km_ida_volta"), disabled=True,
+                                    help="Rota de rodovia da fábrica (Av. Henrique Gonçalves Baptista, 2035 – "
+                                         "Barueri) até o endereço de entrega, ida e volta.")
+                    st.caption("🔒 " + ss[k("km_msg")] + " Calculado pelo endereço; não pode ser alterado.")
+                else:
+                    st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0, format="%.0f",
+                                    key=k("km_ida_volta"),
+                                    **({} if k("km_ida_volta") in ss else {"value": None}))
+                    if dest and ss.get(k("km_msg")):
+                        st.caption(ss[k("km_msg")])
+                        st.button("🔄 Tentar calcular os km de novo", key=k("btn_km"),
+                                  on_click=lambda d=dest: atualizar_km(d, forcar=True))
             if not sem_cobranca and ss.get(k("montagem_opcao")) not in (None, "Não contratar"):
                 st.radio("Lançamento da montagem no Focco", [LANC_PEDIDO, LANC_ITENS], key=k("lanc_montagem"),
                          horizontal=True,
