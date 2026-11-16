@@ -232,7 +232,7 @@ def lancamentos_erp(r, pol_pct, com):
         fator = 1 - d(pol_pct) / 100
         difal_l, fcp_l = difal_l / fator, fcp_l / fator
     return dict(frete=r["frete_nf"], montagem=r["despesas_acessorias_nf"], difal=difal_l, fcp=fcp_l,
-                embutido_sem_guia=(guias == 0 and E > 0))
+                embutido_sem_guia=(guias == 0 and E > 0), diluido=bool(r.get("diluido")))
 
 
 # ------------------------------------------------------------------
