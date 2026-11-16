@@ -336,11 +336,15 @@ def render(ano):
                                f"({cons['cnae_alerta']}) costuma ser de quem **não é contribuinte do ICMS** "
                                "na compra de móveis. Confirme com o cliente e marque abaixo. "
                                "Na dúvida, consulte o Financeiro: "
-                               "marcar contribuinte por engano deixa o DIFAL fora do orçamento.")
+                               "marcar contribuinte por engano deixa o DIFAL fora do orçamento.  \n"
+                               f"Conferir no [CCC – Cadastro Centralizado de Contribuintes]({consulta.LINK_CCC}): "
+                               "IE habilitada, NF-e/NFC-e habilitadas e IE como destinatário obrigatória "
+                               "indicam contribuinte.")
                 elif cons.get("contribuinte_ie") is True:
                     st.info("Ter inscrição estadual não garante que o cliente é contribuinte do ICMS. "
                             "Confirme com o cliente se ele revende ou industrializa o produto e emite "
-                            "NF-e de venda. Na dúvida, consulte o Financeiro.")
+                            "NF-e de venda. Na dúvida, consulte o Financeiro.  \n"
+                            f"Conferir no [CCC – Cadastro Centralizado de Contribuintes]({consulta.LINK_CCC}).")
                 if cons.get("contribuinte_ie") is None:
                     st.info(f"A consulta não trouxe a inscrição estadual. Confira se o cliente é "
                             f"contribuinte no [Cadastro de Contribuintes (CCC)]({consulta.LINK_CCC}) "
