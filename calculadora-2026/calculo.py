@@ -162,6 +162,8 @@ def calcular(e, cfg):
                     pis_cofins_extra=pis_extra)
 
 
+    diluir = bool(e.get("diluir_frete_montagem"))
+
     def rodada(base):
         frete, aviso = custo_frete(base, e, cfg)
         mont, mont_pct, mont_km = custo_montagem(base, e, cfg)
@@ -169,6 +171,8 @@ def calcular(e, cfg):
         m_final = preco(mont, cred_mont)
         nf = montar_nf(f_final, m_final)
         itens = P + nf["difal_fcp_embutido"]
+        if diluir:                      # frete e montagem lançados aos itens entram no vProd
+            itens += f_final + m_final
         return dict(frete_custo=frete, aviso=aviso, montagem_custo=mont,
                     montagem_pct=mont_pct, montagem_km=mont_km,
                     frete_final=f_final, montagem_final=m_final,
@@ -206,5 +210,6 @@ def calcular(e, cfg):
         resultado_estimado=resultado,
         sp_capital_absorvido=sem_cobranca,
         uso_consumo=bool(uso_consumo),
+        diluido=diluir,
     )
     return r

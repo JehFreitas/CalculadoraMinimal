@@ -2,6 +2,7 @@
 # Tela do cálculo de NF-e Minimal (2026 e 2027).
 
 import json
+from decimal import Decimal
 
 import pandas as pd
 import streamlit as st
@@ -20,6 +21,8 @@ OPCOES = ["Calcular", "Informar valor negociado", "Não contratar"]
 MODO_PCT = "Informar o % da política"
 MODO_ALVO = "Informar o valor final desejado"
 MODO_COM = "Escolher a comissão desejada"
+LANC_PEDIDO = "Frete no campo de frete e montagem ao pedido"
+LANC_ITENS = "Frete e montagem diluídos aos itens"
 END_SIM = "Sim, entrega e faturamento neste endereço"
 END_NAO = "Não, a entrega é em outro endereço"
 CHAVE_COM = "cfg_comercial"
@@ -459,8 +462,17 @@ def render(ano):
             st.info("Valor negociado com o fornecedor: confirme o valor com a Lia antes de informar. "
                     "Digite o custo do fornecedor; a calculadora inclui os impostos e o cliente "
                     "recebe o valor com imposto.")
-        st.caption("Frete: sempre ao pedido, no campo de frete da NF · Montagem: sempre ao pedido, "
-                   "em despesas acessórias"
+        cobra = not sem_cobranca and any(ss.get(k(x)) not in (None, "Não contratar")
+                                         for x in ("frete_opcao", "montagem_opcao"))
+        if cobra:
+            st.radio("Como lançar frete e montagem no Focco *", [LANC_PEDIDO, LANC_ITENS], key=k("lanc_frete"),
+                     horizontal=True,
+                     help="Diluídos aos itens, frete e montagem entram no valor dos itens (vProd) e aumentam "
+                          "a base de cálculo do próprio frete e da montagem. A calculadora já considera isso.")
+        dil = cobra and ss.get(k("lanc_frete")) == LANC_ITENS
+        st.caption(("Frete e montagem: acréscimos em valor, aplicáveis aos itens (somam no vProd)"
+                    if dil else
+                    "Frete: ao pedido, no campo de frete da NF · Montagem: ao pedido, em despesas acessórias")
                    + (" · DIFAL/FCP: sempre embutido nos itens" if ss.get(k("contribuinte")) == NAO_CONTRIBUINTE else "")
                    + ".")
         if sem_cobranca:
@@ -508,6 +520,10 @@ def render(ano):
 
     def faltando():
         f = []
+        if (not (ss.get(k("estado")) == "São Paulo" and ss.get(k("cidade")) == "Capital")
+                and any(ss.get(k(x)) not in (None, "Não contratar") for x in ("frete_opcao", "montagem_opcao"))
+                and not ss.get(k("lanc_frete"))):
+            f.append("Como lançar frete e montagem no Focco")
         if consulta_atual().get("endereco"):
             if not ss.get(k("end_confirma")):
                 f.append("Confirmação do endereço de entrega e faturamento")
@@ -604,6 +620,7 @@ def render(ano):
             frete_aplicacao=PEDIDO,
             montagem_aplicacao=PEDIDO,
             dividir=bool(ss.get(k("dividir"))) and ano == "2026",
+            diluir_frete_montagem=ss.get(k("lanc_frete")) == LANC_ITENS,
         )
 
     def meta_atual():
@@ -706,10 +723,18 @@ def render(ano):
     if r["difal_fcp_embutido"]:
         linhas_nf += [("  · produtos", r["valor_produtos"]),
                       (f"  · {rot_emb}", r["difal_fcp_embutido"])]
-    if r["frete_nf"]:
-        linhas_nf.append(("Frete (vFrete)", r["frete_nf"]))
-    if r["despesas_acessorias_nf"]:
-        linhas_nf.append(("Despesas acessórias · montagem (vOutro)", r["despesas_acessorias_nf"]))
+    if r.get("diluido"):
+        if not r["difal_fcp_embutido"]:
+            linhas_nf.append(("  · produtos", r["valor_produtos"]))
+        if r["frete_nf"]:
+            linhas_nf.append(("  · frete diluído aos itens", r["frete_nf"]))
+        if r["despesas_acessorias_nf"]:
+            linhas_nf.append(("  · montagem diluída aos itens", r["despesas_acessorias_nf"]))
+    else:
+        if r["frete_nf"]:
+            linhas_nf.append(("Frete (vFrete)", r["frete_nf"]))
+        if r["despesas_acessorias_nf"]:
+            linhas_nf.append(("Despesas acessórias · montagem (vOutro)", r["despesas_acessorias_nf"]))
     linhas_nf.append((("Valor do IPI" if not e.get("ipi_itens") else
                        f"Valor do IPI (média {float(r['ipi_pct']):.2f}%)".replace(".", ",")), r["ipi"]))
     if ano == "2027":
@@ -737,8 +762,11 @@ def render(ano):
                     + " · Desconto Política da capa: 0%"), None),
                   *[(f"   exceção: {x['item']} — Política (700/1/3) {float(x['pct']):.4f}%".replace(".", ","), None)
                     for x in excs],
-                  ("Valor de frete (Entrega › Transporte)", erp["frete"]),
-                  ("Acréscimo MONTAGEM (valor, aplicável ao pedido)", erp["montagem"])]
+                  *([("Valor de frete (Entrega › Transporte)", Decimal(0)),
+                     ("Acréscimo FRETE - DILUÍDO AOS ITENS (valor, aplicável aos itens)", erp["frete"]),
+                     ("Acréscimo MONTAGEM (valor, aplicável aos itens)", erp["montagem"])] if erp["diluido"] else
+                    [("Valor de frete (Entrega › Transporte)", erp["frete"]),
+                     ("Acréscimo MONTAGEM (valor, aplicável ao pedido)", erp["montagem"])])]
     if erp["difal"] or erp["fcp"]:
         if erp["embutido_sem_guia"]:
             linhas_erp.append(("Acréscimo DIFAL (valor, aplicável aos itens) · ICMS sobre IPI", erp["difal"]))
@@ -862,6 +890,7 @@ def render(ano):
                f"{x['item']}: {formatar(x['valor'])} com IPI " + f"{float(x['ipi']):.2f}%".replace(".", ",")
                for x in e["ipi_itens"]))] if e.get("ipi_itens") else []),
            ("Frete:", e["frete_opcao"]),
+           *([("Lançamento:", LANC_ITENS)] if e.get("diluir_frete_montagem") else []),
            ("Montagem:", e["montagem_opcao"])]
     if e["km_ida_volta"]:
         cab.append(("Distância:", f"{e['km_ida_volta']:.0f} km"))
@@ -878,27 +907,35 @@ def render(ano):
         if erp["fcp"]:
             lanc.append(("Acréscimo", "FUNDO DE COMBATE A POBREZA (999/1/3)", erp["fcp"], "Valor",
                          "Aplicável aos Itens"))
+        if erp["diluido"] and erp["frete"]:
+            lanc.append(("Acréscimo", "FRETE - DILUIDO AOS ITENS (999/1/3)", erp["frete"], "Valor",
+                         "Aplicável aos Itens"))
         if erp["montagem"]:
-            lanc.append(("Acréscimo", "MONTAGEM (999/1/3)", erp["montagem"], "Valor", "Aplicável ao Pedido"))
+            lanc.append(("Acréscimo", "MONTAGEM (999/1/3)", erp["montagem"], "Valor",
+                         "Aplicável aos Itens" if erp["diluido"] else "Aplicável ao Pedido"))
         notas_l = [f"Condição de pagamento {r['cond_rotulo']} ({cond_txt}): informe no campo próprio "
                    "da condição de pagamento, não neste quadro."]
         if not lanc:
             notas_l.append("Nenhum desconto ou acréscimo a lançar.")
-        notas_l.append("Não lançar \"Frete - diluído aos itens\". O desconto SERVIÇO, quando houver divisão, "
+        notas_l.append(("Frete e montagem diluídos aos itens: Valor de frete da Entrega fica em 0. "
+                        if erp["diluido"] else "Não lançar \"Frete - diluído aos itens\". ")
+                       + "O desconto SERVIÇO, quando houver divisão, "
                        "é lançado pelo ADM Comercial.")
         pol_itens = []
         if excs:
             pol_itens = [(x["item"], x["pct"]) for x in excs] + [("Demais itens", r["politica_pct"])]
             notas_l.append("Política lançada em cada item (700/1/3). Desconto Politica da capa: 0%.")
         descontos_t = (-cond_val if cond_val < 0 else 0) + valor_pol
-        acresc_t = (cond_val if cond_val > 0 else 0) + erp["montagem"] + erp["difal"] + erp["fcp"]
+        frete_campo = Decimal(0) if erp["diluido"] else erp["frete"]
+        acresc_t = ((cond_val if cond_val > 0 else 0) + erp["montagem"] + erp["difal"] + erp["fcp"]
+                    + (erp["frete"] if erp["diluido"] else 0))
         totais = [("Total Itens", r["total_tabela"]), ("Total Descontos", descontos_t),
-                  ("Total Acréscimos", acresc_t), ("Total Frete", erp["frete"]), ("Total IPI", r["ipi"])]
+                  ("Total Acréscimos", acresc_t), ("Total Frete", frete_campo), ("Total IPI", r["ipi"])]
         if ano == "2027":
             totais += [("Total CBS", r["cbs"]), ("Total IBS", r["ibs"])]
         totais.append(("Valor Total", r["total_nf"]))
         return dict(lancamentos=lanc, notas_lancamentos=notas_l, politica_itens=pol_itens, totais=totais,
-                    entrega=[("Valor de frete", erp["frete"]), ("Valor de seguro", 0)],
+                    entrega=[("Valor de frete", frete_campo), ("Valor de seguro", 0)],
                     notas_totais=["O Focco arredonda item a item: o Valor Total pode diferir alguns centavos. "
                                   "Total ICMS e Total DIFAL do Focco não entram na conferência."])
 
