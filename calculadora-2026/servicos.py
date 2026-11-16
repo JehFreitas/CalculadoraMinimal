@@ -395,11 +395,31 @@ def enviar_email(st, assunto, corpo_html, anexos, token=None, destinatarios=None
         return False, f"Falha de conexão com o e-mail: {exc}"
 
 
+def registro_json(valores, tipo="nfe"):
+    """Anexo com a linha da planilha (nome das colunas + valores), para um fluxo do Power
+    Automate gravar numa planilha do Excel sem acesso da calculadora ao SharePoint."""
+    tabela, colunas = TABELAS[tipo]
+    return json.dumps({"tabela": tabela, "colunas": list(colunas),
+                       "linha": [v if isinstance(v, (int, float)) else ("" if v is None else str(v))
+                                 for v in valores]}, ensure_ascii=False).encode("utf-8")
+
+
+def _planilha_por_email(st):
+    return bool((_secao(st, "sharepoint") or {}).get("registro_por_email"))
+
+
 def enviar_e_salvar(st, valores, assunto, corpo_html, anexos, tipo="nfe"):
-    """Faz as duas etapas; retorna (ok_planilha, msg_planilha, ok_email, msg_email)."""
+    """Faz as duas etapas; retorna (ok_planilha, msg_planilha, ok_email, msg_email).
+    O e-mail leva sempre o anexo registro_simulacao.json. Com [sharepoint] registro_por_email = true,
+    a calculadora não grava no SharePoint: quem grava a linha é o fluxo do Power Automate."""
     token, erro = _token_microsoft(st)
     if not token:
         return False, erro, False, erro
+    anexos = list(anexos) + [("registro_simulacao.json", registro_json(valores, tipo))]
+    if _planilha_por_email(st):
+        ok_e, msg_e = enviar_email(st, assunto, corpo_html, anexos, token)
+        return ok_e, ("Registro enviado junto com o e-mail para a planilha do ADM." if ok_e
+                      else "Registro não enviado: o e-mail falhou."), ok_e, msg_e
     ok_p, msg_p = registrar_planilha(st, valores, token, tipo)
     ok_e, msg_e = enviar_email(st, assunto, corpo_html, anexos, token)
     return ok_p, msg_p, ok_e, msg_e
