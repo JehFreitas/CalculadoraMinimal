@@ -380,8 +380,8 @@ def render(ano):
                      format_func=lambda cod: descontos.rotulo_condicao(conds[cod], com),
                      placeholder="Selecione",
                      help="Só aparecem as condições cadastradas no Focco com o % conferido. "
-                          "Se a condição não estiver na lista, solicite o cálculo a Custos.")
-        st.caption("A condição não está na lista? Solicite o cálculo a Custos (custos@minimaldesign.com.br) antes de seguir.")
+                          "Se a condição não estiver na lista, solicite o cadastro da condição a Custos.")
+        st.caption("A condição não está na lista? Solicite o cadastro da condição a Custos (custos@minimaldesign.com.br) antes de seguir.")
         c1, c2 = st.columns(2)
         c1.selectbox("Equipe do vendedor *", list(limites.keys()), index=None, key=k("equipe"),
                      placeholder="Selecione",
