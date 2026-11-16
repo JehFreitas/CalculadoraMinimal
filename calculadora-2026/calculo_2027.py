@@ -122,7 +122,7 @@ def calcular(e, cfg):
             ipi=ipi, cbs=cbs, ibs=ibs, base_icms=base_icms,
             icms=I * base_icms, difal=DIFAL * base_icms, fcp=FCP * base_icms,
             total_nf=soma + ipi + cbs + ibs,
-            valor_itens_nf=P + E + ((F + M) if e.get("diluir_frete_montagem") else 0),
+            valor_itens_nf=P + E + (F if e.get("diluir_frete") else 0) + (M if e.get("diluir_montagem") else 0),
             liq_F=liq_F, liq_M=liq_M, liq_E=liq_E,
         )
 
@@ -155,6 +155,6 @@ def calcular(e, cfg):
         carga=I,
         sp_capital_absorvido=sem_cobranca,
         icms_extra=Decimal(0), pis_cofins_extra=Decimal(0),
-        diluido=bool(e.get("diluir_frete_montagem")),
+        diluido_frete=bool(e.get("diluir_frete")), diluido_montagem=bool(e.get("diluir_montagem")),
     )
     return r
