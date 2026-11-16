@@ -851,6 +851,7 @@ def render(ano):
     elif dv:
         with st.container(border=True):
             st.subheader("Divisão em pedido de produtos e de serviço (ADM Comercial)")
+            st.caption("🔐 Visível só com a Área restrita aberta. O vendedor vê apenas o Total NFe e o Total NFSe.")
             if dv["negativo"]:
                 st.warning("Os produtos e o frete, sem os acréscimos, ficam abaixo da parte de produtos: "
                            "o pedido de produtos precisaria de acréscimo, não de desconto. Confira com o ADM.")
