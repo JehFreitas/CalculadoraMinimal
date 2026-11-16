@@ -37,6 +37,54 @@ def token_cnpja(st):
 
 
 # ------------------------------------------------------------------
+# Distância de rodovia (OpenRouteService) para a montagem
+# [rotas] ors_key = "..."   (chave gratuita em openrouteservice.org)
+# ------------------------------------------------------------------
+ORIGEM_FABRICA = "Avenida Henrique Gonçalves Baptista, 2035, Jardim Belval, Barueri, SP, 06420-130, Brasil"
+ORS = "https://api.openrouteservice.org"
+
+
+def _ors_coord(chave, texto):
+    r = requests.get(f"{ORS}/geocode/search", timeout=TIMEOUT,
+                     params={"api_key": chave, "text": texto, "boundary.country": "BR", "size": 1})
+    if r.status_code != 200:
+        return None, f"localização indisponível ({r.status_code})"
+    feats = r.json().get("features") or []
+    if not feats:
+        return None, "endereço não encontrado no mapa"
+    lon, lat = feats[0]["geometry"]["coordinates"][:2]
+    return (lon, lat), feats[0].get("properties", {}).get("label", "")
+
+
+def distancia_km(st, destino):
+    """Distância de rodovia ida e volta (km) da fábrica em Barueri até o destino.
+    Retorna (km_ida_e_volta ou None, mensagem)."""
+    chave = (_secao(st, "rotas") or {}).get("ors_key")
+    if not chave:
+        return None, "Cálculo de km não configurado (Secrets [rotas] ors_key). Informe os km manualmente."
+    if not (destino or "").strip():
+        return None, "Sem endereço do cliente: consulte o CNPJ ou informe o endereço de entrega."
+    try:
+        origem, _ = _ors_coord(chave, ORIGEM_FABRICA)
+        if not origem:
+            return None, "Não foi possível localizar a fábrica no mapa. Informe os km manualmente."
+        dest, rotulo = _ors_coord(chave, destino.replace("·", ","))
+        if not dest:
+            return None, f"Destino: {rotulo}. Informe os km manualmente."
+        r = requests.post(f"{ORS}/v2/directions/driving-car", timeout=TIMEOUT,
+                          headers={"Authorization": chave, "Content-Type": "application/json"},
+                          json={"coordinates": [list(origem), list(dest)]})
+        if r.status_code != 200:
+            return None, f"Rota indisponível ({r.status_code}). Informe os km manualmente."
+        metros = r.json()["routes"][0]["summary"]["distance"]
+        ida = metros / 1000
+        trecho = f"{ida:,.0f}".replace(",", ".")
+        return float(round(ida * 2)), f"Rota Barueri → {rotulo}: {trecho} km por trecho"
+    except (requests.RequestException, KeyError, IndexError, ValueError) as exc:
+        return None, f"Falha no cálculo de km ({exc.__class__.__name__}). Informe os km manualmente."
+
+
+# ------------------------------------------------------------------
 # Parâmetros: gravar o config.json no GitHub
 # [github] token, repo, branch, path
 # ------------------------------------------------------------------
