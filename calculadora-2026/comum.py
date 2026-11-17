@@ -56,17 +56,31 @@ def numero_br(texto):
         return None
     neg = t.startswith("-")
     t = t.lstrip("+-")
+    def milhar_ok(inteiro, sep):
+        g = inteiro.split(sep)
+        return 1 <= len(g[0]) <= 3 and all(len(x) == 3 for x in g[1:])
+
     if "," in t and "." in t:
         dec = "," if t.rfind(",") > t.rfind(".") else "."
         mil = "." if dec == "," else ","
-        t = t.replace(mil, "").replace(dec, ".")
+        inteiro, _, frac = t.rpartition(dec)
+        if dec in inteiro or not milhar_ok(inteiro, mil):
+            return None                              # ex.: 10.000.00 ou 1,234.567,8
+        t = inteiro.replace(mil, "") + "." + frac
     elif "," in t:
         partes = t.split(",")
-        t = t.replace(",", "") if (len(partes) > 2) else t.replace(",", ".")
+        if len(partes) > 2:
+            if not milhar_ok(t, ","):
+                return None                          # ex.: 1,5,6
+            t = t.replace(",", "")
+        else:
+            t = t.replace(",", ".")
     elif "." in t:
         partes = t.split(".")
         # ponto como separador de milhar: vários pontos, ou um só com 3 dígitos depois e parte inteira > 0
         if len(partes) > 2 or (len(partes[-1]) == 3 and partes[0] not in ("", "0")):
+            if not milhar_ok(t, "."):
+                return None                          # ex.: 1.23.456
             t = t.replace(".", "")
     try:
         v = float(t)
@@ -87,9 +101,14 @@ def campo_numero(rotulo, chave, casas=2, minimo=0.0, maximo=None, help=None, pla
     ss = st.session_state
     tk = chave + "_txt"
     ult = chave + "_ult"
+
+    def fmt(v):
+        t = fmt_br(v, casas)
+        return t.rstrip("0").rstrip(",") if casas > 2 else t     # 18,8532000 → 18,8532
+
     externo = ss.get(chave)
     if isinstance(externo, (int, float)) and (tk not in ss or externo != ss.get(ult)):
-        ss[tk] = fmt_br(float(externo), casas)     # valor definido fora do campo (ex.: outra tela)
+        ss[tk] = fmt(float(externo))     # valor definido fora do campo (ex.: outra tela)
 
     def ler(txt):
         txt = txt or ""
@@ -103,7 +122,7 @@ def campo_numero(rotulo, chave, casas=2, minimo=0.0, maximo=None, help=None, pla
     def ao_mudar():
         v = ler(ss.get(tk))
         if v is not None:
-            ss[tk] = fmt_br(v, casas)
+            ss[tk] = fmt(v)
 
     (container or st).text_input(rotulo, key=tk, on_change=ao_mudar, help=help,
                                  placeholder=placeholder or ("0," + "0" * casas))
@@ -123,6 +142,15 @@ def md(texto):
 
 def fmt_pct(fracao):
     return f"{fracao * 100:.2f}%".replace(".", ",")
+
+
+def hoje():
+    return datetime.now(FUSO).date()
+
+
+def pct7(v):
+    """Percentual com até 7 casas, sem zeros à direita: 35% · 18,8532% · 13,5141318%."""
+    return f"{float(v):.7f}".rstrip("0").rstrip(".").replace(".", ",") + "%"
 
 
 def agora():
@@ -266,7 +294,7 @@ def _dados_orcamento(cabecalho_linhas):
 
 
 def _pct4(v):
-    return f"{float(v):.4f}".replace(".", ",") + "%"
+    return pct7(v)
 
 
 def _num(v):

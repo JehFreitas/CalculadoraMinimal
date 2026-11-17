@@ -22,7 +22,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from calculo import PASTA, d
 
 CONFIG_PATH = os.path.join(PASTA, "config_comercial.json")
-CASAS_POLITICA = Decimal("0.0001")   # o ERP aceita a política com 4 casas (ex.: 24,6122%)
+CASAS_POLITICA = Decimal("0.0000001")   # o Focco aceita a política com 7 casas (ex.: 13,5141318%)
 
 
 def carregar_config(path=CONFIG_PATH):

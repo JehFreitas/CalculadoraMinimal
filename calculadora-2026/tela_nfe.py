@@ -249,6 +249,20 @@ def render(ano):
             return (ss.get(k("end_entrega")) or "").strip()
         return cons["endereco"]
 
+    def destino_consultado():
+        """(estado, cidade) do local de entrega segundo a consulta de CNPJ, ou None."""
+        cons = ss.get(k("consulta")) or {}
+        if not (cons.get("ok") and cons.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj"), ""))):
+            return None
+        conf = ss.get(k("end_confirma"))
+        if conf == END_SIM:
+            return cons.get("estado"), cons.get("cidade")
+        if conf == END_NAO:
+            ce = ss.get(k("consulta_entrega")) or {}
+            if ce.get("ok") and ce.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj_entrega"), "")):
+                return ce.get("estado"), ce.get("cidade")
+        return None
+
     def atualizar_km(dest, forcar=False):
         if not forcar and ss.get(k("km_dest")) == dest:
             return
@@ -290,6 +304,8 @@ def render(ano):
     with st.container(border=True):
         st.subheader("1. Cliente")
         c1, c2 = st.columns(2)
+        if k("data") not in ss:
+            ss[k("data")] = comum.hoje()      # data de Brasília (o servidor está em UTC)
         c1.date_input("Data", format="DD/MM/YYYY", key=k("data"))
         c2.text_input("Vendedor", key=k("vendedor"))
         c1.text_input("Cliente", key=k("cliente"))
@@ -385,6 +401,14 @@ def render(ano):
                           "Consumidor final: compra para uso e consumo.")
 
     estado, cidade = ss.get(k("estado")), ss.get(k("cidade"))
+    ref = destino_consultado()
+    if ref and estado and ref[0] and estado != ref[0]:
+        st.error(f"O estado de destino ({estado}) é diferente do endereço de entrega consultado ({ref[0]}). "
+                 "Frete, montagem, km e DIFAL seguem o local de entrega: corrija o estado ou a resposta "
+                 "sobre o endereço de entrega.")
+    elif ref and cidade and ref[1] and cidade != ref[1]:
+        st.warning(f"A consulta indica {ref[1]} para o endereço de entrega, mas foi marcado {cidade}. "
+                   "Confirme antes de calcular.")
     sp_capital = estado == "São Paulo" and cidade == "Capital"
     sem_cobranca = sp_capital and cfg["frete"].get("sp_capital_sem_cobranca", True)
 
@@ -425,7 +449,7 @@ def render(ano):
                          format_func=lambda i: descontos.rotulo_faixa(faixas, i), placeholder="Selecione",
                          help="A política fica no maior desconto da faixa escolhida (até o limite da equipe).")
         if ss.get(k("modo_pol")) == MODO_PCT:
-            comum.campo_numero("Desconto da política (%) *", k("politica"), casas=4, maximo=100.0,
+            comum.campo_numero("Desconto da política (%) *", k("politica"), casas=7, maximo=100.0,
                                help="Aplicado sobre os itens já com a condição de pagamento, como no ERP.")
         elif ss.get(k("modo_pol")) == MODO_ALVO:
             comum.campo_numero("Valor total da NF desejado (R$) *", k("alvo"),
@@ -444,7 +468,7 @@ def render(ano):
                                "Item": st.column_config.TextColumn("Item (nº ou descrição)"),
                                "Valor de tabela (R$)": st.column_config.NumberColumn(min_value=0.0, format="%.2f"),
                                "Desconto (%)": st.column_config.NumberColumn(min_value=0.0, max_value=100.0,
-                                                                              format="%.4f")})
+                                                                              format="%.7f")})
 
         ipi_pad = float(cfg["impostos"].get("ipi") or 0)
         st.checkbox(f"Alguns itens têm IPI diferente de {ipi_pad:g}%".replace(".", ","), key=k("tem_ipi"),
@@ -571,6 +595,10 @@ def render(ano):
                     f.append("Endereço de entrega")
         if not ss.get(k("estado")):
             f.append("Estado de destino")
+        else:
+            ref_ = destino_consultado()
+            if ref_ and ref_[0] and ss.get(k("estado")) != ref_[0]:
+                f.append(f"Estado de destino igual ao do endereço de entrega ({ref_[0]})")
         if not ss.get(k("cidade")):
             f.append("Cidade de destino")
         if not ss.get(k("contribuinte")):
@@ -780,7 +808,7 @@ def render(ano):
         linhas_nf += [("CBS (por fora)", r["cbs"]), ("IBS (por fora)", r["ibs"])]
     linhas_nf.append(("Valor total da NF", r["total_nf"]))
 
-    pc = lambda v: f"{float(v):.4f}".rstrip("0").rstrip(".").replace(".", ",") + "%"
+    pc = lambda v: f"{float(v):.7f}".rstrip("0").rstrip(".").replace(".", ",") + "%"
     cond_txt = ("desconto de " if r["cond_pct"] < 0 else "acréscimo de " if r["cond_pct"] > 0 else "") \
         + (pc(abs(r["cond_pct"])) if r["cond_pct"] else "sem desconto")
     valor_cond = r["total_tabela"] * r["cond_pct"] / 100
@@ -795,11 +823,11 @@ def render(ano):
                    ("Valor dos produtos", r["valor_produtos"])]
     erp = r["erp"]
     linhas_erp = [(f"Condição de pagamento: {r['cond_rotulo']}", None),
-                  ((f"Desconto Política: {r['politica_pct']:.4f}%".replace(".", ",") + " (aplicável aos itens)")
+                  (("Desconto Política: " + comum.pct7(r['politica_pct']) + " (aplicável aos itens)")
                    if not excs else
-                   (f"Política (700/1/3) em cada item: {r['politica_pct']:.4f}%".replace(".", ",")
+                   ("Política (700/1/3) em cada item: " + comum.pct7(r['politica_pct'])
                     + " · Desconto Política da capa: 0%"), None),
-                  *[(f"   exceção: {x['item']} — Política (700/1/3) {float(x['pct']):.4f}%".replace(".", ","), None)
+                  *[(f"   exceção: {x['item']} — Política (700/1/3) " + comum.pct7(x['pct']), None)
                     for x in excs],
                   *([("Valor de frete (Entrega › Transporte)", Decimal(0)),
                      ("Acréscimo FRETE - DILUÍDO AOS ITENS (valor, aplicável aos itens)", erp["frete"])]
@@ -916,7 +944,7 @@ def render(ano):
            ("Destino:", f"{e['estado']} · {e['cidade']}"),
            ("Perfil fiscal:", e["contribuinte"] + (f" · {e['finalidade']}" if e["finalidade"] else "")),
            ("Condição:", f"{r['cond_rotulo']} ({cond_txt})"),
-           ("Política:", f"{r['politica_pct']:.4f}%".replace(".", ",") + f" · {e['equipe']}"
+           ("Política:", comum.pct7(r['politica_pct']) + f" · {e['equipe']}"
                          + (f" · valor desejado {formatar(e['alvo'])}" if e.get("alvo") else "")
                          + (" · pela comissão escolhida" if e.get("modo_pol") == MODO_COM else "")),
            *([("Comissão:", f"faixa de {float(r['comissao']['pct']):g}%".replace(".", ",")
@@ -924,7 +952,7 @@ def render(ano):
                             + (f" (inclui {float(r['comissao']['adicional']):g}% pela divisão)".replace(".", ",")
                                if r["comissao"]["adicional"] else ""))] if r.get("comissao") else []),
            *([("Itens com desconto diferente:", " · ".join(
-               f"{x['item']}: {formatar(x['valor'])} a " + f"{float(x['pct']):.4f}%".replace(".", ",")
+               f"{x['item']}: {formatar(x['valor'])} a " + comum.pct7(x['pct'])
                for x in e["excecoes"]))] if e.get("excecoes") else []),
            *([("Itens com IPI diferente:", " · ".join(
                f"{x['item']}: {formatar(x['valor'])} com IPI " + f"{float(x['ipi']):.2f}%".replace(".", ",")
@@ -1057,10 +1085,10 @@ def render(ano):
             n(r["resultado_estimado"]),
             n(r["total_tabela"]), r["cond_rotulo"], n(r["cond_pct"]), e["equipe"],
             {MODO_ALVO: "Valor final", MODO_COM: "Comissão"}.get(e["modo_pol"], "Percentual"),
-            round(float(r["politica_pct"]), 4), n(e["alvo"]) if e.get("alvo") else "",
+            round(float(r["politica_pct"]), 7), n(e["alvo"]) if e.get("alvo") else "",
             "Sim" if dv else "Não", n(dv["servico"]) if dv else "", n(dv["desconto_itens"]) if dv else "",
             n(dv["total_produtos"]) if dv else "",
-            "; ".join(f"{x['item']}: {x['valor']:.2f} a {x['pct']:.4f}%" for x in e.get("excecoes") or []),
+            "; ".join(f"{x['item']}: {x['valor']:.2f} a {x['pct']:.7f}%" for x in e.get("excecoes") or []),
             e.get("divisao_venda") or "", n(r["comissao"]["pct"]) if r.get("comissao") else "",
         ]
         pdf_adm = pdf(True)
