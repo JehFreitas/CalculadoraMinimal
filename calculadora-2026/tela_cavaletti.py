@@ -94,6 +94,8 @@ def render(ano):
     with st.container(border=True):
         st.subheader("1. Cliente")
         c1, c2 = st.columns(2)
+        if k("data") not in ss:
+            ss[k("data")] = comum.hoje()      # data de Brasília (o servidor está em UTC)
         c1.date_input("Data", format="DD/MM/YYYY", key=k("data"))
         c2.text_input("Vendedor", key=k("vendedor"))
         c1.text_input("Cliente", key=k("cliente"))
