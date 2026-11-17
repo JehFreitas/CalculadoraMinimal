@@ -230,17 +230,18 @@ def render(ano):
         cm_ = com.get("comissao") or {}
         return (cm_.get("por_equipe") or {}).get(equipe) if equipe in cm_.get("equipes", []) else None
 
-    def pj_dividido(equipe, dividir):
-        """Equipe com tabela própria e pedido dividido em produto x serviço: desconto maior, sem comissão."""
-        return bool(dividir) and ano == "2026" and bool(tabela_propria(equipe))
+    def pode_dividir(equipe):
+        """Equipe PJ e Representantes não dividem o pedido em produto e serviço."""
+        return ano == "2026" and equipe not in com.get("equipes_sem_divisao_produto_servico", [])
 
-    def limite_efetivo(equipe, faixas, dividir=False):
+    def dividir_ativo():
+        return bool(ss.get(k("dividir"))) and pode_dividir(ss.get(k("equipe")))
+
+    def limite_efetivo(equipe, faixas):
         """Limite da equipe e, quando há tabela de comissão, o maior desconto permitido na tabela."""
         lim_eq = limites.get(equipe)
         if lim_eq is None or not faixas:
             return lim_eq
-        if pj_dividido(equipe, dividir):
-            return min(float(lim_eq), float(tabela_propria(equipe)["pedido_dividido_desconto_max"]))
         return min(float(lim_eq), float(faixas[-1][0]))
 
     comum.cabecalho(mod["titulo"], mod["subtitulo"])
@@ -451,15 +452,11 @@ def render(ano):
                          help="Opcional. Informada, a calculadora mostra a comissão estimada. "
                               "Obrigatória para escolher pela comissão.")
         faixas = descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda")))
-        sem_com_div = pj_dividido(ss.get(k("equipe")), ss.get(k("dividir")))
-        modos = [MODO_PCT] + ([MODO_COM] if tem_tab and not sem_com_div else []) + [MODO_ALVO]
+        modos = [MODO_PCT] + ([MODO_COM] if tem_tab else []) + [MODO_ALVO]
         if ss.get(k("modo_pol")) not in modos:
             ss[k("modo_pol")] = None
         c2.radio("Desconto da política *", modos, index=None, key=k("modo_pol"))
-        limite = limite_efetivo(ss.get(k("equipe")), faixas, ss.get(k("dividir")))
-        if sem_com_div:
-            c1.caption("Pedido dividido em produto x serviço: desconto até "
-                       f"{propria['pedido_dividido_desconto_max']:g}% sem comissão.")
+        limite = limite_efetivo(ss.get(k("equipe")), faixas)
         if ss.get(k("modo_pol")) == MODO_COM and not faixas:
             st.caption("Selecione a divisão de venda para escolher a comissão.")
         if ss.get(k("modo_pol")) == MODO_COM and faixas:
@@ -560,7 +557,9 @@ def render(ano):
                    + ".")
         if sem_cobranca:
             st.caption("SP Capital: frete e montagem não são cobrados do cliente.")
-        if ano == "2026":
+        if ano == "2026" and ss.get(k("equipe")) and not pode_dividir(ss.get(k("equipe"))):
+            st.caption("Esta equipe não divide o pedido em produto e serviço (só Equipe Interna e Prime).")
+        elif ano == "2026":
             pct_s = com.get("divisao_servico_pct", 40)
             st.checkbox(f"Dividir em pedido de produtos ({100 - pct_s:g}%) e pedido de serviço ({pct_s:g}%)",
                         key=k("dividir"),
@@ -642,8 +641,7 @@ def render(ano):
                 and not tabela_propria(ss.get(k("equipe"))):
             f.append("Divisão de venda")
         lim = limite_efetivo(ss.get(k("equipe")),
-                             descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda"))),
-                             ss.get(k("dividir")))
+                             descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda"))))
         exc = excecoes_atuais()
         if ss.get(k("tem_exc")):
             if not exc:
@@ -705,7 +703,7 @@ def render(ano):
             km_ida_volta=(ss.get(k("km_ida_volta")) or 0) if not sp_capital else 0,
             frete_aplicacao=PEDIDO,
             montagem_aplicacao=PEDIDO,
-            dividir=bool(ss.get(k("dividir"))) and ano == "2026",
+            dividir=dividir_ativo(),
             diluir_frete=ss.get(k("lanc_frete")) == LANC_ITENS and ss.get(k("frete_opcao")) not in (None, "Não contratar"),
             diluir_montagem=(ss.get(k("lanc_montagem")) == LANC_ITENS
                              and ss.get(k("montagem_opcao")) not in (None, "Não contratar")),
@@ -751,7 +749,7 @@ def render(ano):
             cond = conds[e["condicao"]]
             pm, calc_c, cond_pct = descontos.percentual_aplicado(cond, com)
             faixas = descontos.tabela_comissao(com, e["equipe"], e["divisao_venda"])
-            lim_ef = limite_efetivo(e["equipe"], faixas, e["dividir"])
+            lim_ef = limite_efetivo(e["equipe"], faixas)
             pol_in = e["politica"]
             if e["modo_pol"] == MODO_COM:
                 pol_in = min(float(faixas[e["faixa"]][0]), float(lim_ef))
@@ -775,10 +773,7 @@ def render(ano):
                 prop = dv["total_produtos"] / r["total_nf"] if r["total_nf"] else 0
                 dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
                 r["divisao"] = dv
-            if faixas and pj_dividido(e["equipe"], e["dividir"]):
-                r["comissao"] = dict(valor=Decimal(0), pct=Decimal(0), fora=False, adicional=0,
-                                     base=Decimal(0), sem_comissao=True)
-            elif faixas:
+            if faixas:
                 # Comissão: % da faixa de cada item (média ponderada pelos produtos) sobre o
                 # valor líquido da nota sem IPI (pedido dividido: NF-e sem IPI + NFS-e).
                 adic = (com.get("comissao") or {}).get("adicional_divisao", 0) if e["dividir"] else 0
