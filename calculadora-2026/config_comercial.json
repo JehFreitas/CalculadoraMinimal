@@ -861,7 +861,7 @@
  ],
  "divisao_servico_pct": 40,
  "comissao": {
-  "_leia_me": "Só a Equipe Interna e a Equipe PJ recebem comissão; Prime e Representantes não. Faixas: [desconto máximo da faixa em %, comissão em %]; acima da última faixa: não permitido. divisoes: tabela 2023 da Equipe Interna (verde), por divisão de venda (Sem RT / Com RT). por_equipe: tabela própria, sem divisão de venda. Equipe PJ = tabela azul da Política Comercial MNM (distribuidor comercial e PJ); pedido dividido em produto x serviço: desconto até 52% sem comissão.",
+  "_leia_me": "Só a Equipe Interna e a Equipe PJ recebem comissão; Prime e Representantes não. Faixas: [desconto máximo da faixa em %, comissão em %]; acima da última faixa: não permitido. divisoes: tabela verde da Equipe Interna (vendedor CLT e agente comercial remunerado), por divisão de venda (Sem RT / Com RT); pedido dividido em produto x serviço soma adicional_divisao à comissão. por_equipe: tabela própria, sem divisão de venda. Equipe PJ = tabela azul (distribuidor comercial e PJ). equipes_sem_divisao_produto_servico (na raiz): equipes que não dividem o pedido em produto e serviço.",
   "equipes": [
    "Equipe Interna",
    "Equipe PJ"
@@ -954,10 +954,12 @@
       50,
       3
      ]
-    ],
-    "pedido_dividido_desconto_max": 52,
-    "pedido_dividido_comissao": 0
+    ]
    }
   }
- }
+ },
+ "equipes_sem_divisao_produto_servico": [
+  "Equipe PJ",
+  "Representantes"
+ ]
 }
