@@ -237,6 +237,12 @@ def render(ano):
     def dividir_ativo():
         return bool(ss.get(k("dividir"))) and pode_dividir(ss.get(k("equipe")))
 
+    def lim_rotulo(equipe):
+        """Limite mostrado na lista de equipes: o da tabela própria de comissão, quando houver (PJ: 50%)."""
+        propria_ = tabela_propria(equipe)
+        lim_ = float(limites[equipe])
+        return min(lim_, float(max(f[0] for f in propria_["faixas"]))) if propria_ else lim_
+
     def limite_efetivo(equipe, faixas):
         """Limite da equipe e, quando há tabela de comissão, o maior desconto permitido na tabela."""
         lim_eq = limites.get(equipe)
@@ -501,7 +507,7 @@ def render(ano):
         c1, c2 = st.columns(2)
         c1.selectbox("Equipe do vendedor *", list(limites.keys()), index=None, key=k("equipe"),
                      placeholder="Selecione",
-                     format_func=lambda eq: f"{eq} (política até {limites[eq]:g}%)".replace(".", ","))
+                     format_func=lambda eq: f"{eq} (política até {lim_rotulo(eq):g}%)".replace(".", ","))
         cm = com.get("comissao") or {}
         tem_tab = ss.get(k("equipe")) in cm.get("equipes", [])
         propria = tabela_propria(ss.get(k("equipe")))
