@@ -861,7 +861,7 @@
  ],
  "divisao_servico_pct": 40,
  "comissao": {
-  "_leia_me": "Comissão: só Equipe Interna e Equipe PJ; Prime (apurado internamente caso a caso) e Representantes não. Faixas: [desconto máximo da faixa em %, comissão em %]. divisoes: tabela verde da Equipe Interna por RT do arquiteto; o RT também limita o desconto (Sem RT 45%, RT 5% 40%, RT 10% 30%); pedido dividido em produto x serviço soma adicional_divisao à comissão. por_equipe: tabela própria, sem RT. Equipe PJ = tabela azul: desconto até limites_politica (52%), comissão só até a última faixa (50%); acima, sem comissão.",
+  "_leia_me": "Comissão: só Equipe Interna e Equipe PJ; Prime (apurado internamente caso a caso) e Representantes não. Faixas: [desconto máximo da faixa em %, comissão em %]. divisoes: tabela verde da Equipe Interna por RT do arquiteto; o RT também limita o desconto (Sem RT 45%, RT 5% 40%, RT 10% 30%); pedido dividido em produto x serviço soma adicional_divisao à comissão. por_equipe: tabela própria, sem RT. Equipe PJ = tabela azul: desconto até limites_politica (52%), comissão só até a última faixa (50%); acima, sem comissão. Comissão e RT são calculados sobre o valor líquido dos produtos (com condição e política), sem IPI, frete, montagem, DIFAL e FCP. rt_pct: % de RT de cada opção.",
   "equipes": [
    "Equipe Interna",
    "Equipe PJ"
@@ -956,6 +956,11 @@
      ]
     ]
    }
+  },
+  "rt_pct": {
+   "Sem RT": 0,
+   "Com RT 5%": 5,
+   "Com RT 10%": 10
   }
  },
  "equipes_sem_divisao_produto_servico": [

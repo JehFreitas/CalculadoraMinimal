@@ -180,6 +180,7 @@ COLUNAS_NFE = [
     "% política", "Valor final desejado",
     "Divisão produto/serviço", "Pedido de serviço", "Desconto aos itens (produtos)", "Total pedido de produtos",
     "Itens com desconto diferente", "Divisão de venda", "Faixa de comissão (%)",
+    "% RT", "Base comissão/RT (valor líquido)", "RT do arquiteto", "Comissão estimada",
 ]
 
 COLUNAS_VA = [

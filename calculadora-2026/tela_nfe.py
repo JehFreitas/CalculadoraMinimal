@@ -821,16 +821,17 @@ def render(ano):
                 dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
                 r["divisao"] = dv
             if faixas:
-                # Comissão: % da faixa de cada item (média ponderada pelos produtos) sobre o
-                # valor líquido da nota sem IPI (pedido dividido: NF-e sem IPI + NFS-e).
+                # Comissão: % da faixa de cada item sobre o valor líquido dos produtos
+                # (com condição e política; sem IPI, frete, montagem, DIFAL e FCP).
                 adic = (com.get("comissao") or {}).get("adicional_divisao", 0) if e["dividir"] else 0
-                _, cpct, fora = descontos.comissao_estimada(
+                cval, cpct, fora = descontos.comissao_estimada(
                     faixas, e["total_tabela"], cond_pct, pol,
                     [(x["valor"], x["pct"]) for x in e["excecoes"]], adic)
-                dvc = r.get("divisao")
-                base_c = (dvc["total_produtos"] - dvc["ipi_produtos"] + dvc["servico"]) if dvc \
-                    else r["total_nf"] - r["ipi"]
-                r["comissao"] = dict(valor=base_c * cpct / 100, pct=cpct, fora=fora, adicional=adic, base=base_c)
+                r["comissao"] = dict(valor=cval, pct=cpct, fora=fora, adicional=adic, base=r["valor_produtos"])
+            if precisa_rt(e["equipe"]) and e.get("divisao_venda"):
+                # RT do arquiteto: mesma base da comissão
+                rt_pct = Decimal(str(((com.get("comissao") or {}).get("rt_pct") or {}).get(e["divisao_venda"], 0)))
+                r["rt"] = dict(pct=rt_pct, valor=r["valor_produtos"] * rt_pct / 100, base=r["valor_produtos"])
             cons = ss.get(k("consulta")) or {}
             mesmo = cons.get("ok") and cons.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj"), ""))
             meta = dict(meta_atual(), data=ss.get(k("data")),
@@ -927,6 +928,18 @@ def render(ano):
             if cmr["fora"]:
                 st.warning("Desconto acima da tabela de comissão: "
                            + ("sem comissão." if not cmr["pct"] else "sem comissão nos itens acima da tabela."))
+        rt_tela = r.get("rt") if r.get("rt") and r["rt"]["pct"] else None
+        if cmr or rt_tela:
+            base_txt = formatar((cmr or rt_tela)["base"])
+            prev = []
+            if cmr:
+                prev.append(f"Comissão estimada: **{formatar(cmr['valor'])}**")
+            if rt_tela:
+                prev.append(f"RT do arquiteto ({float(r['rt']['pct']):g}%".replace(".", ",")
+                            + f"): **{formatar(r['rt']['valor'])}**")
+            st.write(md(" · ".join(prev)))
+            st.caption(f"Prévia sobre o valor líquido dos produtos ({base_txt}): com condição e política, "
+                       "sem IPI, frete, montagem, DIFAL e FCP.")
         st.caption(f"Prazo médio da condição: {float(r['cond_prazo']):.1f} dias · "
                    f"limite da política: {float(r['limite']):g}%".replace(".", ",")
                    + (f" ({e['equipe']}" + (f", {e['divisao_venda']})" if e.get("divisao_venda") else ")")))
@@ -1022,7 +1035,11 @@ def render(ano):
                             f"faixa de {float(r['comissao']['pct']):g}%".replace(".", ",")
                             + f" · {e['divisao_venda'] or e['equipe']}"
                             + (f" (inclui {float(r['comissao']['adicional']):g}% pela divisão)".replace(".", ",")
-                               if r["comissao"]["adicional"] else ""))] if r.get("comissao") else []),
+                               if r["comissao"]["adicional"] else "")
+                            + f" · estimada {formatar(r['comissao']['valor'])}")] if r.get("comissao") else []),
+           *([("RT do arquiteto:", f"{float(r['rt']['pct']):g}%".replace(".", ",")
+                                   + f" · {formatar(r['rt']['valor'])} sobre {formatar(r['rt']['base'])}")]
+             if r.get("rt") and r["rt"]["pct"] else []),
            *([("Itens com desconto diferente:", " · ".join(
                f"{x['item']}: {formatar(x['valor'])} a " + comum.pct7(x['pct'])
                for x in e["excecoes"]))] if e.get("excecoes") else []),
@@ -1162,6 +1179,10 @@ def render(ano):
             n(dv["total_produtos"]) if dv else "",
             "; ".join(f"{x['item']}: {x['valor']:.2f} a {x['pct']:.7f}%" for x in e.get("excecoes") or []),
             e.get("divisao_venda") or "", n(r["comissao"]["pct"]) if r.get("comissao") else "",
+            n(r["rt"]["pct"]) if r.get("rt") else "",
+            n(r["valor_produtos"]),
+            n(r["rt"]["valor"]) if r.get("rt") else "",
+            n(r["comissao"]["valor"]) if r.get("comissao") else "",
         ]
         pdf_adm = pdf(True)
         assunto = f"Simulação {versao} · {meta['orcamento']} · {meta['cliente']} · {meta['vendedor']}"
