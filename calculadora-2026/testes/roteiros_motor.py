@@ -186,6 +186,8 @@ roteiros.append(("DIV frete dil", dict(dividir=True, dil_f=True, dil_m=True)))
 for dvs in COM["comissao"]["divisoes"]:
     for p in (0, 15, 16, 30, 31, 40, 45):
         roteiros.append((f"COM {dvs} {p}", dict(divisao=dvs, pol=p)))
+for p in (0, 25, 26, 35, 45, 50):
+    roteiros.append((f"COM PJ {p}", dict(equipe="Equipe PJ", pol=p)))
 # I. extremos
 roteiros += [
     ("EXT total 0,01", dict(total=0.01, pol=0)),

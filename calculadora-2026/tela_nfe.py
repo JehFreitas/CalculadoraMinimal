@@ -225,11 +225,22 @@ def render(ano):
     conds = {c["codigo"]: c for c in descontos.condicoes_ativas(com)}
     limites = com["limites_politica"]
 
-    def limite_efetivo(equipe, faixas):
-        """Limite da equipe e, quando há tabela de comissão, o maior desconto permitido na divisão."""
+    def tabela_propria(equipe):
+        """Tabela de comissão própria da equipe, sem divisão de venda (ex.: Equipe PJ)."""
+        cm_ = com.get("comissao") or {}
+        return (cm_.get("por_equipe") or {}).get(equipe) if equipe in cm_.get("equipes", []) else None
+
+    def pj_dividido(equipe, dividir):
+        """Equipe com tabela própria e pedido dividido em produto x serviço: desconto maior, sem comissão."""
+        return bool(dividir) and ano == "2026" and bool(tabela_propria(equipe))
+
+    def limite_efetivo(equipe, faixas, dividir=False):
+        """Limite da equipe e, quando há tabela de comissão, o maior desconto permitido na tabela."""
         lim_eq = limites.get(equipe)
         if lim_eq is None or not faixas:
             return lim_eq
+        if pj_dividido(equipe, dividir):
+            return min(float(lim_eq), float(tabela_propria(equipe)["pedido_dividido_desconto_max"]))
         return min(float(lim_eq), float(faixas[-1][0]))
 
     comum.cabecalho(mod["titulo"], mod["subtitulo"])
@@ -432,18 +443,23 @@ def render(ano):
         tem_tab = ss.get(k("equipe")) in cm.get("equipes", [])
         if ss.get(k("equipe")) and not tem_tab:
             c1.caption("Esta equipe não recebe comissão: só a Equipe Interna e a Equipe PJ.")
-        if tem_tab:
+        propria = tabela_propria(ss.get(k("equipe")))
+        if tem_tab and not propria:
             c1.selectbox("Divisão de venda" + (" *" if ss.get(k("modo_pol")) == MODO_COM else " (opcional)"),
                          list(cm["divisoes"].keys()), index=None, key=k("divisao_venda"),
                          placeholder="Selecione",
                          help="Opcional. Informada, a calculadora mostra a comissão estimada. "
                               "Obrigatória para escolher pela comissão.")
         faixas = descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda")))
-        modos = [MODO_PCT] + ([MODO_COM] if tem_tab else []) + [MODO_ALVO]
+        sem_com_div = pj_dividido(ss.get(k("equipe")), ss.get(k("dividir")))
+        modos = [MODO_PCT] + ([MODO_COM] if tem_tab and not sem_com_div else []) + [MODO_ALVO]
         if ss.get(k("modo_pol")) not in modos:
             ss[k("modo_pol")] = None
         c2.radio("Desconto da política *", modos, index=None, key=k("modo_pol"))
-        limite = limite_efetivo(ss.get(k("equipe")), faixas)
+        limite = limite_efetivo(ss.get(k("equipe")), faixas, ss.get(k("dividir")))
+        if sem_com_div:
+            c1.caption("Pedido dividido em produto x serviço: desconto até "
+                       f"{propria['pedido_dividido_desconto_max']:g}% sem comissão.")
         if ss.get(k("modo_pol")) == MODO_COM and not faixas:
             st.caption("Selecione a divisão de venda para escolher a comissão.")
         if ss.get(k("modo_pol")) == MODO_COM and faixas:
@@ -622,10 +638,12 @@ def render(ano):
         elif ss.get(k("modo_pol")) == MODO_COM and ss.get(k("faixa")) is None:
             f.append("Comissão desejada")
         cm_ = com.get("comissao") or {}
-        if ss.get(k("modo_pol")) == MODO_COM and not ss.get(k("divisao_venda")):
+        if ss.get(k("modo_pol")) == MODO_COM and not ss.get(k("divisao_venda")) \
+                and not tabela_propria(ss.get(k("equipe"))):
             f.append("Divisão de venda")
         lim = limite_efetivo(ss.get(k("equipe")),
-                             descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda"))))
+                             descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda"))),
+                             ss.get(k("dividir")))
         exc = excecoes_atuais()
         if ss.get(k("tem_exc")):
             if not exc:
@@ -670,7 +688,8 @@ def render(ano):
             total_tabela=ss.get(k("total_tabela")) or 0, condicao=ss.get(k("condicao")),
             equipe=ss.get(k("equipe")), modo_pol=modo,
             politica=ss.get(k("politica")) if modo == MODO_PCT else None,
-            divisao_venda=ss.get(k("divisao_venda")) if ss.get(k("equipe")) in (com.get("comissao") or {}).get("equipes", []) else None,
+            divisao_venda=ss.get(k("divisao_venda")) if (ss.get(k("equipe")) in (com.get("comissao") or {}).get("equipes", [])
+                                                          and not tabela_propria(ss.get(k("equipe")))) else None,
             faixa=ss.get(k("faixa")) if modo == MODO_COM else None,
             alvo=ss.get(k("alvo")) if modo == MODO_ALVO else None,
             excecoes=excecoes_atuais(),
@@ -732,7 +751,7 @@ def render(ano):
             cond = conds[e["condicao"]]
             pm, calc_c, cond_pct = descontos.percentual_aplicado(cond, com)
             faixas = descontos.tabela_comissao(com, e["equipe"], e["divisao_venda"])
-            lim_ef = limite_efetivo(e["equipe"], faixas)
+            lim_ef = limite_efetivo(e["equipe"], faixas, e["dividir"])
             pol_in = e["politica"]
             if e["modo_pol"] == MODO_COM:
                 pol_in = min(float(faixas[e["faixa"]][0]), float(lim_ef))
@@ -756,7 +775,10 @@ def render(ano):
                 prop = dv["total_produtos"] / r["total_nf"] if r["total_nf"] else 0
                 dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
                 r["divisao"] = dv
-            if faixas:
+            if faixas and pj_dividido(e["equipe"], e["dividir"]):
+                r["comissao"] = dict(valor=Decimal(0), pct=Decimal(0), fora=False, adicional=0,
+                                     base=Decimal(0), sem_comissao=True)
+            elif faixas:
                 # Comissão: % da faixa de cada item (média ponderada pelos produtos) sobre o
                 # valor líquido da nota sem IPI (pedido dividido: NF-e sem IPI + NFS-e).
                 adic = (com.get("comissao") or {}).get("adicional_divisao", 0) if e["dividir"] else 0
@@ -853,12 +875,15 @@ def render(ano):
             st.write(md(f"{titulo}: {formatar(valor)}"))
         cmr = r.get("comissao")
         if cmr:
-            st.write(md(f"Faixa de comissão ({e['divisao_venda']}): **"
+            if cmr.get("sem_comissao"):
+                st.write(md("Comissão: **sem comissão** (pedido dividido em produto x serviço)"))
+            else:
+                st.write(md(f"Faixa de comissão ({e['divisao_venda'] or e['equipe']}): **"
                         + f"{float(cmr['pct']):g}%".replace(".", ",") + "**"
                         + (f" (inclui {float(cmr['adicional']):g}% pela divisão)".replace(".", ",") if cmr["adicional"] else "")
                         + (" · média das faixas dos itens" if e.get("excecoes") else "")))
             if cmr["fora"]:
-                st.warning("Algum desconto está acima da tabela de comissão desta divisão de venda.")
+                st.warning("Algum desconto está acima da tabela de comissão.")
         st.caption(f"Prazo médio da condição: {float(r['cond_prazo']):.1f} dias · "
                    f"limite da política: {float(r['limite']):g}%".replace(".", ",")
                    + (f" ({e['equipe']}" + (f", {e['divisao_venda']})" if e.get("divisao_venda") else ")")))
@@ -949,8 +974,10 @@ def render(ano):
            ("Política:", comum.pct7(r['politica_pct']) + f" · {e['equipe']}"
                          + (f" · valor desejado {formatar(e['alvo'])}" if e.get("alvo") else "")
                          + (" · pela comissão escolhida" if e.get("modo_pol") == MODO_COM else "")),
-           *([("Comissão:", f"faixa de {float(r['comissao']['pct']):g}%".replace(".", ",")
-                            + f" · {e['divisao_venda']}"
+           *([("Comissão:", "sem comissão (pedido dividido em produto x serviço)"
+                            if r["comissao"].get("sem_comissao") else
+                            f"faixa de {float(r['comissao']['pct']):g}%".replace(".", ",")
+                            + f" · {e['divisao_venda'] or e['equipe']}"
                             + (f" (inclui {float(r['comissao']['adicional']):g}% pela divisão)".replace(".", ",")
                                if r["comissao"]["adicional"] else ""))] if r.get("comissao") else []),
            *([("Itens com desconto diferente:", " · ".join(

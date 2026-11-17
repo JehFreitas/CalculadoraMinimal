@@ -277,6 +277,9 @@ def dividir(r, com, ipi_pct, pol_pct):
 # ------------------------------------------------------------------
 def tabela_comissao(com, equipe, divisao):
     cm = com.get("comissao") or {}
+    propria = (cm.get("por_equipe") or {}).get(equipe)
+    if propria and equipe in cm.get("equipes", []):
+        return sorted(propria["faixas"], key=lambda f: f[0])     # sem divisão de venda (ex.: PJ)
     if equipe not in cm.get("equipes", []) or divisao not in cm.get("divisoes", {}):
         return None
     return sorted(cm["divisoes"][divisao], key=lambda f: f[0])
