@@ -430,6 +430,8 @@ def render(ano):
                      format_func=lambda eq: f"{eq} (política até {limites[eq]:g}%)".replace(".", ","))
         cm = com.get("comissao") or {}
         tem_tab = ss.get(k("equipe")) in cm.get("equipes", [])
+        if ss.get(k("equipe")) and not tem_tab:
+            c1.caption("Esta equipe não recebe comissão: só a Equipe Interna e a Equipe PJ.")
         if tem_tab:
             c1.selectbox("Divisão de venda" + (" *" if ss.get(k("modo_pol")) == MODO_COM else " (opcional)"),
                          list(cm["divisoes"].keys()), index=None, key=k("divisao_venda"),
