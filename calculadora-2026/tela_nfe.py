@@ -1019,8 +1019,13 @@ def render(ano):
             ("Ganho que fica com a empresa (economia − redução)", imp["ganho_empresa"]),
         ]
     if dv and not comum.adm_logado():
-        st.caption("Pedido marcado para divisão: monte o orçamento com 100% no pedido, com os valores acima. "
-                   "O ADM Comercial faz a divisão em produto e serviço depois.")
+        with st.container(border=True):
+            st.subheader("Depois da divisão (feita pelo ADM Comercial)")
+            st.caption("O orçamento acima é o pedido 100%: monte assim no Focco. Depois o ADM Comercial divide "
+                       "em produto e serviço, e o IPI passa a incidir só sobre a NF-e de produtos.")
+            st.write(md(f"Total NF-e (produtos): **{formatar(dv['total_produtos'])}** "
+                        f"· IPI {formatar(dv['ipi_produtos'])}"))
+            st.write(md(f"Total NFS-e (serviço): **{formatar(dv['servico'])}**"))
     elif dv:
         with st.container(border=True):
             st.subheader("Divisão em pedido de produtos e de serviço (ADM Comercial)")
@@ -1144,6 +1149,11 @@ def render(ano):
                   ("Resumo da Nota Fiscal (NFe)", linhas_nf)]
         notas = []
         finais = []
+        if dv and not admin:
+            blocos.append(("Depois da divisão (feita pelo ADM Comercial)",
+                           [("Total NF-e (produtos)", dv["total_produtos"]),
+                            ("   IPI da NF-e de produtos", dv["ipi_produtos"]),
+                            ("Total NFS-e (serviço)", dv["servico"])]))
         if admin and dv:
             finais.append(("Divisão em pedido de produtos e de serviço",
                            [(t.strip(), v) for t, v in linhas_div if v is not None]))
