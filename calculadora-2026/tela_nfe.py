@@ -1019,16 +1019,12 @@ def render(ano):
             ("Ganho que fica com a empresa (economia − redução)", imp["ganho_empresa"]),
         ]
     if dv and not comum.adm_logado():
-        with st.container(border=True):
-            st.subheader("Após a divisão (para informar o cliente)")
-            st.write(md(f"Total NFe (produtos): **{formatar(dv['total_produtos'])}**"))
-            st.write(md(f"Total NFSe (serviço): **{formatar(dv['servico'])}**"))
-            st.caption("Monte o orçamento normalmente, com os valores acima. "
-                       "O ADM Comercial faz a divisão depois.")
+        st.caption("Pedido marcado para divisão: monte o orçamento com 100% no pedido, com os valores acima. "
+                   "O ADM Comercial faz a divisão em produto e serviço depois.")
     elif dv:
         with st.container(border=True):
             st.subheader("Divisão em pedido de produtos e de serviço (ADM Comercial)")
-            st.caption("🔐 Visível só com a Área restrita aberta. O vendedor vê apenas o Total NFe e o Total NFSe.")
+            st.caption("🔐 Visível só com a Área restrita aberta. O vendedor vê o pedido 100%, sem a divisão.")
             if dv["negativo"]:
                 st.warning("Os produtos e o frete, sem os acréscimos, ficam abaixo da parte de produtos: "
                            "o pedido de produtos precisaria de acréscimo, não de desconto. Confira com o ADM.")
@@ -1148,9 +1144,6 @@ def render(ano):
                   ("Resumo da Nota Fiscal (NFe)", linhas_nf)]
         notas = []
         finais = []
-        if dv and not admin:
-            blocos.append(("Após a divisão", [("Total NFe (produtos)", dv["total_produtos"]),
-                                              ("Total NFSe (serviço)", dv["servico"])]))
         if admin and dv:
             finais.append(("Divisão em pedido de produtos e de serviço",
                            [(t.strip(), v) for t, v in linhas_div if v is not None]))
