@@ -861,7 +861,7 @@
  ],
  "divisao_servico_pct": 40,
  "comissao": {
-  "_leia_me": "Tabela de descontos e comissão 2023. Só a Equipe Interna e a Equipe PJ recebem comissão; Prime e Representantes não. Faixas: [desconto máximo da faixa em %, comissão em %]. Acima da última faixa da divisão: não permitido.",
+  "_leia_me": "Só a Equipe Interna e a Equipe PJ recebem comissão; Prime e Representantes não. Faixas: [desconto máximo da faixa em %, comissão em %]; acima da última faixa: não permitido. divisoes: tabela 2023 da Equipe Interna (verde), por divisão de venda (Sem RT / Com RT). por_equipe: tabela própria, sem divisão de venda. Equipe PJ = tabela azul da Política Comercial MNM (distribuidor comercial e PJ); pedido dividido em produto x serviço: desconto até 52% sem comissão.",
   "equipes": [
    "Equipe Interna",
    "Equipe PJ"
@@ -930,6 +930,34 @@
      3
     ]
    ]
+  },
+  "por_equipe": {
+   "Equipe PJ": {
+    "faixas": [
+     [
+      25,
+      20
+     ],
+     [
+      35,
+      15
+     ],
+     [
+      40,
+      10
+     ],
+     [
+      45,
+      6
+     ],
+     [
+      50,
+      3
+     ]
+    ],
+    "pedido_dividido_desconto_max": 52,
+    "pedido_dividido_comissao": 0
+   }
   }
  }
 }
