@@ -201,6 +201,11 @@ def calcular(e, cfg):
     r["sobra_difal"] = (r["difal_fcp_embutido"] - r["difal"] - r["fcp"]
                         - r["icms_extra"] - r["pis_cofins_extra"])
 
+    if e.get("divisao_params") and receita_serv >= 0:
+        return _dividido(r, e, cfg, dict(P=P, IPI=IPI, ICMS=ICMS, DIFAL=DIFAL, FCP=FCP, a=a, carga=carga,
+                                         cred_mont=cred_mont, margem=margem, aliq_ir=aliq_ir,
+                                         sem_cobranca=sem_cobranca, iteracoes=iteracoes))
+
     r.update(
         iteracoes=iteracoes,
         valor_produtos=P,
@@ -212,5 +217,61 @@ def calcular(e, cfg):
         sp_capital_absorvido=sem_cobranca,
         uso_consumo=bool(uso_consumo),
         diluido_frete=dil_f, diluido_montagem=dil_m,
+    )
+    return r
+
+
+def _dividido(r0, e, cfg, k):
+    """
+    Pedido dividido em produto x serviço (decidido no orçamento).
+    Os produtos, o frete, o IPI e o ICMS seguem o cálculo normal (a economia de IPI e ICMS da
+    divisão fica com a empresa). Os acréscimos são refeitos pelo que de fato acontece:
+      - montagem vai para a NFS-e: preço = custo × (1 − crédito) ÷ (1 − ISS − PIS/COFINS do serviço);
+      - DIFAL/FCP cobre só as guias da NF-e de produtos (+ ICMS sobre o IPI dela), e o valor
+        acrescentado é receita de serviço: E' × (1 − ISS − PIS/COFINS) = guias + ICMS sobre IPI.
+    Custos da Salis e da montadora: os mesmos do pedido sem divisão (conservador).
+    """
+    dp = e["divisao_params"]
+    s_pct = d(dp["pct_servico"]) / 100
+    carga_s = d(dp["iss"]) / 100 + d(dp["pis_cofins"]) / 100
+    P, IPI = k["P"], k["IPI"]
+    F = r0["frete_final"]
+    if k["sem_cobranca"] or r0["montagem_custo"] == 0:
+        M = Decimal(0)
+    else:
+        c = r0["montagem_custo"]
+        M = (c * (1 - k["cred_mont"]) + c * k["margem"] / (1 - k["aliq_ir"])) / (1 - carga_s)
+    E = Decimal(0)
+    for _ in range(200):
+        T = (P + F + M + E) * (1 + IPI)
+        T_prod = T * (1 - s_pct)
+        ipi_prod = T_prod * IPI / (1 + IPI)
+        necessario = (k["DIFAL"] + k["FCP"]) * T_prod + k["a"] * k["ICMS"] * ipi_prod
+        novo = necessario / (1 - carga_s) if necessario else Decimal(0)
+        if abs(novo - E) < Decimal("0.00001"):
+            E = novo
+            break
+        E = novo
+    T = (P + F + M + E) * (1 + IPI)
+    T_prod = T * (1 - s_pct)
+    dil_f, dil_m = bool(e.get("diluir_frete")), bool(e.get("diluir_montagem"))
+    r = dict(r0)
+    sem = {c: r0[c] for c in ("total_nf", "ipi", "difal", "fcp", "difal_fcp_embutido", "montagem_final",
+                              "frete_final", "valor_itens_nf")}
+    receita_m = M * (1 - carga_s)
+    r.update(
+        montagem_final=M, difal_fcp_embutido=E, ipi=(P + F + M + E) * IPI, total_nf=T,
+        difal=k["DIFAL"] * T_prod, fcp=k["FCP"] * T_prod,
+        valor_itens_nf=P + E + (F if dil_f else 0) + (M if dil_m else 0),
+        icms_extra=Decimal(0), pis_cofins_extra=Decimal(0), sobra_difal=Decimal(0),
+        iteracoes=k["iteracoes"], valor_produtos=P, frete_nf=F, despesas_acessorias_nf=M,
+        multiplicador=1 / (1 - k["carga"]), carga=k["carga"],
+        resultado_estimado=(r0["resultado_estimado"] if not M else
+                            r0["resultado_estimado"] - (r0["montagem_final"] * (1 - k["carga"])
+                                                        + r0["montagem_custo"] * k["cred_mont"])
+                            + receita_m + r0["montagem_custo"] * k["cred_mont"]),
+        sp_capital_absorvido=k["sem_cobranca"], uso_consumo=bool(r0.get("uso_consumo")),
+        diluido_frete=dil_f, diluido_montagem=dil_m,
+        dividido=True, sem_divisao=sem, carga_servico=carga_s,
     )
     return r
