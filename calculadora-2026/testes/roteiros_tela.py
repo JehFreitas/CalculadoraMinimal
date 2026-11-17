@@ -94,7 +94,7 @@ def nova(adm=False, rota="ok", tag="x"):
 
 BASE = dict(vendedor="Vendedor Teste", cliente="Cliente", orcamento="9999", estado="Rio De Janeiro",
             cidade="Capital", contribuinte=consulta and "Não contribuinte (mesmo com IE)", total_tabela=80000.0,
-            condicao=105, equipe="Equipe Interna", modo_pol="Informar o % da política", politica=35.0,
+            condicao=105, equipe="Equipe Interna", divisao_venda="Sem RT", modo_pol="Informar o % da política", politica=35.0,
             frete_opcao="Calcular", montagem_opcao="Calcular", km_ida_volta=30.0)
 
 

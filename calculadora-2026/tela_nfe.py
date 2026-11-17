@@ -241,9 +241,18 @@ def render(ano):
         return float(limites[equipe])
 
     def limite_efetivo(equipe, faixas):
-        """Limite de desconto da equipe. A tabela de comissão não limita o desconto:
-        acima da última faixa (ou em faixa N/A) o desconto é permitido, sem comissão."""
-        return limites.get(equipe)
+        """Limite de desconto.
+        Equipe Interna: o RT limita o desconto (Sem RT 45%, RT 5% 40%, RT 10% 30%).
+        Equipe PJ (tabela própria, sem RT): limite da equipe (52%); comissão só até a última faixa (50%)."""
+        lim_eq = limites.get(equipe)
+        if lim_eq is None or not faixas or tabela_propria(equipe):
+            return lim_eq
+        return min(float(lim_eq), float(faixas[-1][0]))
+
+    def precisa_rt(equipe):
+        """Equipe com tabela de comissão por RT (Equipe Interna): o RT é obrigatório."""
+        cm_ = com.get("comissao") or {}
+        return equipe in cm_.get("equipes", []) and not tabela_propria(equipe)
 
     def ipi_itens_atuais():
         if not ss.get(k("tem_ipi")):
@@ -507,11 +516,11 @@ def render(ano):
         tem_tab = ss.get(k("equipe")) in cm.get("equipes", [])
         propria = tabela_propria(ss.get(k("equipe")))
         if tem_tab and not propria:
-            c1.selectbox("Divisão de venda" + (" *" if ss.get(k("modo_pol")) == MODO_COM else " (opcional)"),
+            c1.selectbox("RT do arquiteto *",
                          list(cm["divisoes"].keys()), index=None, key=k("divisao_venda"),
                          placeholder="Selecione",
-                         help="Opcional. Informada, a calculadora mostra a comissão estimada. "
-                              "Obrigatória para escolher pela comissão.")
+                         help="O RT define o limite de desconto e a faixa de comissão: "
+                              "Sem RT até 45% · RT 5% até 40% · RT 10% até 30%.")
         faixas = descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda")))
         modos = [MODO_PCT] + ([MODO_COM] if tem_tab else []) + [MODO_ALVO]
         if ss.get(k("modo_pol")) not in modos:
@@ -519,7 +528,7 @@ def render(ano):
         c2.radio("Desconto da política *", modos, index=None, key=k("modo_pol"))
         limite = limite_efetivo(ss.get(k("equipe")), faixas)
         if ss.get(k("modo_pol")) == MODO_COM and not faixas:
-            st.caption("Selecione a divisão de venda para escolher a comissão.")
+            st.caption("Selecione o RT do arquiteto para escolher a comissão.")
         if ss.get(k("modo_pol")) == MODO_COM and faixas:
             st.selectbox("Comissão desejada *", list(range(len(faixas))), index=None, key=k("faixa"),
                          format_func=lambda i: descontos.rotulo_faixa(faixas, i), placeholder="Selecione",
@@ -672,11 +681,12 @@ def render(ano):
         elif ss.get(k("modo_pol")) == MODO_COM and ss.get(k("faixa")) is None:
             f.append("Comissão desejada")
         cm_ = com.get("comissao") or {}
-        if ss.get(k("modo_pol")) == MODO_COM and not ss.get(k("divisao_venda")) \
-                and not tabela_propria(ss.get(k("equipe"))):
-            f.append("Divisão de venda")
+        if precisa_rt(ss.get(k("equipe"))) and not ss.get(k("divisao_venda")):
+            f.append("RT do arquiteto")
         lim = limite_efetivo(ss.get(k("equipe")),
                              descontos.tabela_comissao(com, ss.get(k("equipe")), ss.get(k("divisao_venda"))))
+        rt_txt = (f" · {ss.get(k('divisao_venda'))}" if precisa_rt(ss.get(k("equipe"))) and ss.get(k("divisao_venda"))
+                  else f" · {ss.get(k('equipe'))}" if ss.get(k("equipe")) else "")
         exc = excecoes_atuais()
         if ss.get(k("tem_exc")):
             if not exc:
@@ -685,7 +695,7 @@ def render(ano):
                 f.append("Valor e desconto de cada item com desconto diferente")
             acima = [x for x in exc if lim is not None and x["pct"] is not None and x["pct"] > lim]
             if acima:
-                f.append((f"Desconto de cada item dentro do limite da equipe ({lim:g}%); acima: ".replace(".", ",")
+                f.append((f"Desconto de cada item dentro do limite ({lim:g}%{rt_txt}); acima: ".replace(".", ",")
                           + ", ".join(f"{x['item']} ({comum.pct7(x['pct'])})" for x in acima)))
             if sum((x["valor"] or 0) for x in exc) > (ss.get(k("total_tabela")) or 0) + 0.005:
                 f.append("Soma dos itens com desconto diferente até o Total Itens")
@@ -699,7 +709,7 @@ def render(ano):
                 f.append("Soma dos itens com IPI diferente até o Total Itens")
         if (ss.get(k("modo_pol")) == MODO_PCT and lim is not None and ss.get(k("politica")) is not None
                 and ss.get(k("politica")) > lim):
-            f.append(f"Desconto da política dentro do limite da equipe ({lim:g}%)".replace(".", ","))
+            f.append(f"Desconto da política dentro do limite ({lim:g}%{rt_txt})".replace(".", ","))
         if not ss.get(k("frete_opcao")):
             f.append("Frete")
         elif ss.get(k("frete_opcao")) == "Informar valor negociado" and not ss.get(k("frete_negociado")):

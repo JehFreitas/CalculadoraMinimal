@@ -31,7 +31,8 @@ def simular(ano="2026", estado="Rio De Janeiro", cidade="Capital", contrib=calcu
              diluir_frete=dil_f and frete != "Não contratar", diluir_montagem=dil_m and mont != "Não contratar")
     _, _, cond_pct = descontos.percentual_aplicado(CONDS[cond], COM)
     faixas = descontos.tabela_comissao(COM, equipe, divisao)
-    lim = LIM[equipe]
+    propria = (COM["comissao"].get("por_equipe") or {}).get(equipe)
+    lim = LIM[equipe] if (not faixas or propria) else min(float(LIM[equipe]), float(faixas[-1][0]))
     pol_, r, aviso = descontos.resolver(e, cfg, motor, total, cond_pct, lim, modo, politica=pol, alvo=alvo,
                                          excecoes=[(v, p) for _, v, p in excs],
                                          ipi_itens=list(ipis), nomes_excecoes=[x for x, _, _ in excs])
