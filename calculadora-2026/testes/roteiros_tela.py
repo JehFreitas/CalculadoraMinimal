@@ -222,9 +222,9 @@ def u09():
 
 
 def u10():
-    at = calcular(preencher(nova(), modo_pol="Escolher a comissão desejada", politica=None))
-    if not any("Divisão de venda" in e.value for e in at.error):
-        return "comissão sem divisão de venda não bloqueada"
+    at = calcular(preencher(nova(), divisao_venda=None))
+    if not any("RT do arquiteto" in e.value for e in at.error):
+        return "Equipe Interna sem RT não bloqueada"
 
 
 def u11():
