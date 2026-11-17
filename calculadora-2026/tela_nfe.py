@@ -984,14 +984,26 @@ def render(ano):
                        ("   incluir desconto em valor, aplicável aos itens", dv["desconto_itens"]),
                        ("   IPI do pedido de produtos", dv["ipi_produtos"]),
                        (f"   Valor Total do pedido de produtos ({100 - float(dv['pct_servico']):g}%)", dv["total_produtos"])]
-        guia_orig = r["difal"] + r["fcp"]
-        guia_div = dv["guia_difal"] + dv["guia_fcp"]
-        linhas_efeito = [("IPI: orçamento original", r["ipi"]), ("IPI: pedido de produtos", dv["ipi_produtos"])]
-        if guia_orig:
-            linhas_efeito += [("Guias DIFAL + FCP: orçamento original", guia_orig),
-                              ("Guias DIFAL + FCP: pedido de produtos", guia_div)]
-        linhas_efeito.append(("Diferença que fica com a empresa (IPI + guias), antes do ISS",
-                              (r["ipi"] - dv["ipi_produtos"]) + (guia_orig - guia_div)))
+        imp = descontos.impostos_divisao(r, dv, cfg, e, com)
+        sm, cp, cs = imp["sem"], imp["com_produtos"], imp["com_servico"]
+        iss_txt = (f"ISS ({float(imp['iss_pct']):g}%)".replace(".", ",") if imp["iss_pct"] is not None
+                   else "ISS (alíquota a cadastrar — não incluído)")
+        linhas_efeito = [
+            ("Sem divisão (tudo na NF-e)", None),
+            ("   IPI", sm["ipi"]), ("   ICMS próprio", sm["icms"]),
+            *([("   Guias DIFAL + FCP", sm["guias"])] if sm["guias"] else []),
+            ("   PIS/COFINS", sm["pis"]),
+            ("   Total de impostos sem divisão", imp["total_sem"]),
+            ("Com divisão: NF-e de produtos", None),
+            ("   IPI", cp["ipi"]), ("   ICMS próprio", cp["icms"]),
+            *([("   Guias DIFAL + FCP", cp["guias"])] if cp["guias"] else []),
+            ("   PIS/COFINS", cp["pis"]),
+            ("Com divisão: NFS-e de serviço", None),
+            (f"   {iss_txt}", cs["iss"]), ("   PIS/COFINS", cs["pis"]),
+            ("   Total de impostos com divisão (NF-e + NFS-e)", imp["total_com"]),
+            ("Economia de impostos com a divisão" if imp["economia"] >= 0 else "Custo a mais com a divisão",
+             abs(imp["economia"])),
+        ]
     if dv and not comum.adm_logado():
         with st.container(border=True):
             st.subheader("Após a divisão (para informar o cliente)")
@@ -1013,8 +1025,12 @@ def render(ano):
                           if com.get("politica_desconta_acrescimos_aos_itens") else ""))
             st.markdown("**Efeito da divisão**")
             for titulo, valor in linhas_efeito:
-                st.write(md(f"{titulo}: {formatar(valor)}"))
-            st.caption("Frete e montagem: custos considerados sobre o orçamento original (a confirmar).")
+                st.write(md(f"**{titulo}**" if valor is None else
+                            (f"**{titulo}: {formatar(valor)}**" if not titulo.startswith(" ") else
+                             f"{titulo}: {formatar(valor)}")))
+            st.caption("O cliente paga o mesmo Valor Total nos dois casos: a diferença de impostos fica com a "
+                       "empresa. IRPJ/CSLL (lucro real) incidem sobre o lucro e não estão no quadro. "
+                       "PIS/COFINS sem IPI e sem ICMS na base.")
 
     if desatualizado:
         return

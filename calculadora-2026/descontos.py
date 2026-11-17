@@ -272,6 +272,37 @@ def dividir(r, com, ipi_pct, pol_pct):
                 negativo=reducao < 0)
 
 
+def impostos_divisao(r, dv, cfg, e, com):
+    """Impostos sobre o faturamento com e sem a divisão em produto x serviço.
+    NF-e: IPI, ICMS próprio, guias de DIFAL/FCP e PIS/COFINS (base sem IPI e sem ICMS).
+    NFS-e: ISS e PIS/COFINS. IRPJ/CSLL (lucro real) incidem sobre o lucro e ficam de fora.
+    Retorna dict com as linhas 'sem' e 'com' e o total de cada cenário."""
+    uf = cfg["estados"][e["estado"]]
+    i = d(uf["icms_interestadual"]) / 100
+    pc = d(cfg["impostos"]["pis_cofins"]) / 100
+    sem_ie = e["contribuinte"] == "Não contribuinte (mesmo com IE)"
+    consumo = sem_ie or e.get("finalidade") == "Consumidor final"
+    aliq_guias = (d(uf["difal"]) + d(uf["fcp"])) / 100 if sem_ie else Decimal(0)
+
+    def nfe(total, ipi):
+        icms = i * (total if consumo else total - ipi)
+        guias = aliq_guias * total
+        pis = pc * (total - ipi - icms)
+        return dict(ipi=ipi, icms=icms, guias=guias, pis=pis)
+
+    sem = nfe(r["total_nf"], r["ipi"])
+    com_p = nfe(dv["total_produtos"], dv["ipi_produtos"])
+    iss_pct = com.get("divisao_iss_pct")
+    pc_serv = d(com.get("divisao_pis_cofins_servico_pct", cfg["impostos"]["pis_cofins"])) / 100
+    iss = dv["servico"] * d(iss_pct) / 100 if iss_pct is not None else Decimal(0)
+    base_pis_s = dv["servico"] - (iss if com.get("divisao_iss_fora_base_pis_cofins") else 0)
+    com_s = dict(iss=iss, pis=pc_serv * base_pis_s)
+    total_sem = sum(sem.values())
+    total_com = sum(com_p.values()) + sum(com_s.values())
+    return dict(sem=sem, com_produtos=com_p, com_servico=com_s, iss_pct=iss_pct,
+                total_sem=total_sem, total_com=total_com, economia=total_sem - total_com)
+
+
 # ------------------------------------------------------------------
 # Comissão por faixa de desconto (tabela 2023)
 # ------------------------------------------------------------------
