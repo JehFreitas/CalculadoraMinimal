@@ -861,9 +861,10 @@
  ],
  "divisao_servico_pct": 40,
  "comissao": {
-  "_leia_me": "Tabela de descontos e comissão 2023 (categoria verde: vendedor CLT e agente comercial remunerado). Faixas: [desconto máximo da faixa em %, comissão em %]. Acima da última faixa da divisão: não permitido.",
+  "_leia_me": "Tabela de descontos e comissão 2023. Só a Equipe Interna e a Equipe PJ recebem comissão; Prime e Representantes não. Faixas: [desconto máximo da faixa em %, comissão em %]. Acima da última faixa da divisão: não permitido.",
   "equipes": [
-   "Equipe Interna"
+   "Equipe Interna",
+   "Equipe PJ"
   ],
   "adicional_divisao": 2.0,
   "divisoes": {
