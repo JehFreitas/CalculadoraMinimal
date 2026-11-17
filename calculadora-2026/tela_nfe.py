@@ -1021,10 +1021,9 @@ def render(ano):
     if dv and not comum.adm_logado():
         with st.container(border=True):
             st.subheader("Depois da divisão (feita pelo ADM Comercial)")
-            st.caption("O orçamento acima é o pedido 100%: monte assim no Focco. Depois o ADM Comercial divide "
-                       "em produto e serviço, e o IPI passa a incidir só sobre a NF-e de produtos.")
-            st.write(md(f"Total NF-e (produtos): **{formatar(dv['total_produtos'])}** "
-                        f"· IPI {formatar(dv['ipi_produtos'])}"))
+            st.caption("O orçamento acima é o pedido 100%: monte assim no Focco. "
+                       "Depois o ADM Comercial divide em produto e serviço.")
+            st.write(md(f"Total NF-e (produtos): **{formatar(dv['total_produtos'])}**"))
             st.write(md(f"Total NFS-e (serviço): **{formatar(dv['servico'])}**"))
     elif dv:
         with st.container(border=True):
@@ -1152,7 +1151,6 @@ def render(ano):
         if dv and not admin:
             blocos.append(("Depois da divisão (feita pelo ADM Comercial)",
                            [("Total NF-e (produtos)", dv["total_produtos"]),
-                            ("   IPI da NF-e de produtos", dv["ipi_produtos"]),
                             ("Total NFS-e (serviço)", dv["servico"])]))
         if admin and dv:
             finais.append(("Divisão em pedido de produtos e de serviço",
