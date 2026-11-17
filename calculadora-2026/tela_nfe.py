@@ -800,8 +800,14 @@ def render(ano):
             pol_in = e["politica"]
             if e["modo_pol"] == MODO_COM:
                 pol_in = min(float(faixas[e["faixa"]][0]), float(lim_ef))
+            e_calc = e
+            if e["dividir"]:
+                # pedido dividido: montagem e DIFAL/FCP recalculados como receita de serviço (NFS-e)
+                e_calc = dict(e, divisao_params=dict(
+                    pct_servico=com.get("divisao_servico_pct", 40), iss=com.get("divisao_iss_pct") or 0,
+                    pis_cofins=com.get("divisao_pis_cofins_servico_pct", cfg["impostos"]["pis_cofins"])))
             pol, r, aviso_pol = descontos.resolver(
-                e, cfg, motor, e["total_tabela"], cond_pct, lim_ef,
+                e_calc, cfg, motor, e["total_tabela"], cond_pct, lim_ef,
                 "valor_final" if e["modo_pol"] == MODO_ALVO else "percentual",
                 politica=pol_in, alvo=e["alvo"],
                 excecoes=[(x["valor"], x["pct"]) for x in e["excecoes"]],
@@ -818,7 +824,10 @@ def render(ano):
             if e["dividir"]:
                 dv = descontos.dividir(r, com, r["ipi_pct"], pol_comp)
                 prop = dv["total_produtos"] / r["total_nf"] if r["total_nf"] else 0
-                dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
+                if r.get("dividido"):
+                    dv.update(guia_difal=r["difal"], guia_fcp=r["fcp"])     # já sobre a NF-e de produtos
+                else:
+                    dv.update(guia_difal=r["difal"] * prop, guia_fcp=r["fcp"] * prop)
                 r["divisao"] = dv
             if faixas:
                 # Comissão: % da faixa de cada item sobre o valor líquido dos produtos
@@ -1003,6 +1012,11 @@ def render(ano):
             ("   Total de impostos com divisão (NF-e + NFS-e)", imp["total_com"]),
             ("Economia de impostos com a divisão" if imp["economia"] >= 0 else "Custo a mais com a divisão",
              abs(imp["economia"])),
+            ("Preço ao cliente", None),
+            ("   Valor Total se não fosse dividido", imp["valor_sem"]),
+            ("   Valor Total com a divisão (montagem e DIFAL/FCP como serviço)", imp["valor_com"]),
+            ("Redução para o cliente", imp["reducao_cliente"]),
+            ("Ganho que fica com a empresa (economia − redução)", imp["ganho_empresa"]),
         ]
     if dv and not comum.adm_logado():
         with st.container(border=True):
@@ -1028,9 +1042,12 @@ def render(ano):
                 st.write(md(f"**{titulo}**" if valor is None else
                             (f"**{titulo}: {formatar(valor)}**" if not titulo.startswith(" ") else
                              f"{titulo}: {formatar(valor)}")))
-            st.caption("O cliente paga o mesmo Valor Total nos dois casos: a diferença de impostos fica com a "
+            st.caption("Com a divisão, a montagem e o DIFAL/FCP são recalculados como serviço "
+                       f"(ISS {com.get('divisao_iss_pct') or 0:g}% + PIS/COFINS) e o DIFAL/FCP cobre só as guias da "
+                       "NF-e de produtos: essa parte reduz o preço ao cliente. A economia de IPI e ICMS fica com a "
                        "empresa. IRPJ/CSLL (lucro real) incidem sobre o lucro e não estão no quadro. "
-                       "PIS/COFINS sem IPI e sem ICMS na base.")
+                       "PIS/COFINS sem IPI e sem ICMS na base."
+                       + (f" Código de serviço da NFS-e: {com.get('divisao_codigo_servico')}." if com.get('divisao_codigo_servico') else ""))
 
     if desatualizado:
         return

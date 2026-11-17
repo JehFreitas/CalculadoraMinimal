@@ -203,7 +203,7 @@ def calcular(e, cfg):
 
     if e.get("divisao_params") and receita_serv >= 0:
         return _dividido(r, e, cfg, dict(P=P, IPI=IPI, ICMS=ICMS, DIFAL=DIFAL, FCP=FCP, a=a, carga=carga,
-                                         cred_mont=cred_mont, margem=margem, aliq_ir=aliq_ir,
+                                         cred_mont=cred_mont, cred_frete=cred_frete, margem=margem, aliq_ir=aliq_ir,
                                          sem_cobranca=sem_cobranca, iteracoes=iteracoes))
 
     r.update(
@@ -258,7 +258,16 @@ def _dividido(r0, e, cfg, k):
     r = dict(r0)
     sem = {c: r0[c] for c in ("total_nf", "ipi", "difal", "fcp", "difal_fcp_embutido", "montagem_final",
                               "frete_final", "valor_itens_nf")}
-    receita_m = M * (1 - carga_s)
+    # resultado de frete (NF-e) e montagem (NFS-e): receita líquida de impostos + créditos − custos
+    fc, mc = r0["frete_custo"], r0["montagem_custo"]
+    if k["sem_cobranca"]:
+        res = -(fc * (1 - k["cred_frete"]) + mc * (1 - k["cred_mont"]))
+    else:
+        res = Decimal(0)
+        if F:
+            res += F * (1 - k["carga"]) + fc * k["cred_frete"] - fc
+        if M:
+            res += M * (1 - carga_s) + mc * k["cred_mont"] - mc
     r.update(
         montagem_final=M, difal_fcp_embutido=E, ipi=(P + F + M + E) * IPI, total_nf=T,
         difal=k["DIFAL"] * T_prod, fcp=k["FCP"] * T_prod,
@@ -266,10 +275,7 @@ def _dividido(r0, e, cfg, k):
         icms_extra=Decimal(0), pis_cofins_extra=Decimal(0), sobra_difal=Decimal(0),
         iteracoes=k["iteracoes"], valor_produtos=P, frete_nf=F, despesas_acessorias_nf=M,
         multiplicador=1 / (1 - k["carga"]), carga=k["carga"],
-        resultado_estimado=(r0["resultado_estimado"] if not M else
-                            r0["resultado_estimado"] - (r0["montagem_final"] * (1 - k["carga"])
-                                                        + r0["montagem_custo"] * k["cred_mont"])
-                            + receita_m + r0["montagem_custo"] * k["cred_mont"]),
+        resultado_estimado=res,
         sp_capital_absorvido=k["sem_cobranca"], uso_consumo=bool(r0.get("uso_consumo")),
         diluido_frete=dil_f, diluido_montagem=dil_m,
         dividido=True, sem_divisao=sem, carga_servico=carga_s,

@@ -290,7 +290,8 @@ def impostos_divisao(r, dv, cfg, e, com):
         pis = pc * (total - ipi - icms)
         return dict(ipi=ipi, icms=icms, guias=guias, pis=pis)
 
-    sem = nfe(r["total_nf"], r["ipi"])
+    sd = r.get("sem_divisao") or r                  # preço que o pedido teria sem a divisão
+    sem = nfe(sd["total_nf"], sd["ipi"])
     com_p = nfe(dv["total_produtos"], dv["ipi_produtos"])
     iss_pct = com.get("divisao_iss_pct")
     pc_serv = d(com.get("divisao_pis_cofins_servico_pct", cfg["impostos"]["pis_cofins"])) / 100
@@ -299,8 +300,11 @@ def impostos_divisao(r, dv, cfg, e, com):
     com_s = dict(iss=iss, pis=pc_serv * base_pis_s)
     total_sem = sum(sem.values())
     total_com = sum(com_p.values()) + sum(com_s.values())
+    reducao_cliente = sd["total_nf"] - r["total_nf"]
     return dict(sem=sem, com_produtos=com_p, com_servico=com_s, iss_pct=iss_pct,
-                total_sem=total_sem, total_com=total_com, economia=total_sem - total_com)
+                total_sem=total_sem, total_com=total_com, economia=total_sem - total_com,
+                valor_sem=sd["total_nf"], valor_com=r["total_nf"], reducao_cliente=reducao_cliente,
+                ganho_empresa=(total_sem - total_com) - reducao_cliente)
 
 
 # ------------------------------------------------------------------

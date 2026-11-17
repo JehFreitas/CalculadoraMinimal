@@ -33,6 +33,10 @@ def simular(ano="2026", estado="Rio De Janeiro", cidade="Capital", contrib=calcu
     faixas = descontos.tabela_comissao(COM, equipe, divisao)
     propria = (COM["comissao"].get("por_equipe") or {}).get(equipe)
     lim = LIM[equipe] if (not faixas or propria) else min(float(LIM[equipe]), float(faixas[-1][0]))
+    if dividir and ano == "2026":
+        e = dict(e, divisao_params=dict(pct_servico=COM.get("divisao_servico_pct", 40),
+                                        iss=COM.get("divisao_iss_pct") or 0,
+                                        pis_cofins=COM.get("divisao_pis_cofins_servico_pct", 9.25)))
     pol_, r, aviso = descontos.resolver(e, cfg, motor, total, cond_pct, lim, modo, politica=pol, alvo=alvo,
                                          excecoes=[(v, p) for _, v, p in excs],
                                          ipi_itens=list(ipis), nomes_excecoes=[x for x, _, _ in excs])
@@ -66,7 +70,21 @@ def checar(tag, ano="2026", **kw):
     if ano == "2026" and abs(r["sobra_difal"]) > C:
         falha(tag, f"sobra DIFAL {r['sobra_difal']}")
     uf = CFG["estados"][e["estado"]]
-    if ano == "2026" and sem_ie:
+    if r.get("dividido"):
+        carga_s = D(str(COM["divisao_iss_pct"] + COM["divisao_pis_cofins_servico_pct"])) / 100
+        t_prod = r["total_nf"] * (1 - D(str(COM["divisao_servico_pct"])) / 100)
+        aliq = D(str(uf["difal"] + uf["fcp"])) / 100 if sem_ie else D(0)
+        ipi_prod = t_prod * r["ipi_pct"] / 100 / (1 + r["ipi_pct"] / 100)
+        icms_ipi = D(str(uf["icms_interestadual"])) / 100 * ipi_prod if sem_ie else D(0)
+        if abs(E * (1 - carga_s) - aliq * t_prod - icms_ipi) > C:
+            falha(tag, f"dividido: embutido {E:.2f} não cobre guias da NF-e de produtos + ICMS s/ IPI")
+        sd = r["sem_divisao"]
+        if r["total_nf"] > sd["total_nf"] + C:
+            falha(tag, f"dividido: total {r['total_nf']:.2f} maior que sem divisão {sd['total_nf']:.2f}")
+        if r["montagem_custo"] and not r["sp_capital_absorvido"] and \
+                abs(M * (1 - carga_s) + r["montagem_custo"] * D("0.0925") - r["montagem_custo"]) > C:
+            falha(tag, "dividido: montagem não cobre o custo com ISS + PIS/COFINS")
+    elif ano == "2026" and sem_ie:
         g = r["total_nf"] * D(str(uf["difal"] + uf["fcp"])) / 100
         if abs(g - r["difal"] - r["fcp"]) > C:
             falha(tag, f"guias {r['difal']+r['fcp']} ≠ alíquota×NF {g}")
@@ -105,13 +123,14 @@ def checar(tag, ano="2026", **kw):
             if not r["aviso"]:
                 falha(tag, "UF sem Salis sem aviso")
         else:
-            esp = max(r["valor_itens_nf"], D(30000)) * D(str(pc)) / 100
+            base_c = (r.get("sem_divisao") or r)["valor_itens_nf"]
+            esp = max(base_c, D(30000)) * D(str(pc)) / 100
             if abs(esp - r["frete_custo"]) > C:
                 falha(tag, f"custo frete {r['frete_custo']:.2f} ≠ {esp:.2f}")
     # 10. montagem
     if kw.get("mont", "Calcular") == "Calcular" and ano == "2026":
         km = 0 if (e["estado"] == "São Paulo" and e["cidade"] == "Capital") else D(str(kw.get("km", 30)))
-        esp = r["valor_itens_nf"] * D("0.035") + km * D("3.5")
+        esp = (r.get("sem_divisao") or r)["valor_itens_nf"] * D("0.035") + km * D("3.5")
         if abs(esp - r["montagem_custo"]) > C:
             falha(tag, f"custo montagem {r['montagem_custo']:.2f} ≠ {esp:.2f}")
     # 11. política dentro do limite
