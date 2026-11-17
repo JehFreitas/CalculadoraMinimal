@@ -244,6 +244,68 @@ def render(ano):
             return lim_eq
         return min(float(lim_eq), float(faixas[-1][0]))
 
+    def ipi_itens_atuais():
+        if not ss.get(k("tem_ipi")):
+            return []
+        return [dict(item=x["item"], valor=x["valor"], ipi=x["pct"])
+                for x in linhas_editor("ipi_editor", "IPI (%)")]
+
+    def excecoes_atuais():
+        if not ss.get(k("tem_exc")):
+            return []
+        return linhas_editor("exc_editor", "Desconto (%)")
+
+    def linhas_editor(chave, col_pct):
+        est = ss.get(k(chave)) or {}
+        linhas = [dict(l) for l in est.get("added_rows", [])]
+        for i, mud in (est.get("edited_rows") or {}).items():
+            if int(i) < len(linhas):
+                linhas[int(i)].update(mud)
+        apagar = set(est.get("deleted_rows") or [])
+        out = []
+        for i, l in enumerate(linhas):
+            if i in apagar:
+                continue
+            tv, tp = l.get("Valor de tabela (R$)"), l.get(col_pct)
+            vazio = lambda t: t is None or (isinstance(t, float) and t != t) or not str(t).strip()
+            if vazio(tv) and vazio(tp) and vazio(l.get("Item")):
+                continue
+            v = None if vazio(tv) else ler_valor(tv)
+            pct_i = None if vazio(tp) else ler_pct(tp)
+            out.append(dict(item=str(l.get("Item") or f"Item {i + 1}").strip(), valor=v, pct=pct_i,
+                            txt_valor="" if vazio(tv) else str(tv), txt_pct="" if vazio(tp) else str(tp)))
+        return out
+
+    def ler_valor(t):
+        """Valor colado ou digitado (12.345,67 · 12345.67 · R$ 1.360,00)."""
+        if isinstance(t, (int, float)):
+            return float(t)
+        v = comum.numero_br(t)
+        return v if v is not None and v >= 0 else None
+
+    def ler_pct(t):
+        """Percentual: 13,5141318 · 13.5141318 · 13,5% (ponto sozinho é decimal)."""
+        if isinstance(t, (int, float)):
+            return float(t)
+        t = str(t).strip()
+        if t.count(".") == 1 and "," not in t:
+            t = t.replace(".", ",")
+        v = comum.numero_br(t)
+        return v if v is not None and 0 <= v <= 100 else None
+
+    def avisos_editor(chave, col_pct):
+        """Mostra embaixo da tabela o que foi entendido de cada linha e o que não foi reconhecido."""
+        linhas = linhas_editor(chave, col_pct)
+        ruins = [x["item"] for x in linhas if (x["txt_valor"] and x["valor"] is None)
+                 or (x["txt_pct"] and x["pct"] is None)]
+        if ruins:
+            st.caption(":red[Valor não reconhecido em: " + ", ".join(ruins)
+                       + ". Exemplos: valor 12.345,67 · percentual 13,5141318]")
+        ok = [x for x in linhas if x["valor"] is not None and x["pct"] is not None]
+        if ok:
+            st.caption("Entendido: " + " · ".join(f"{x['item']}: {formatar(Decimal(str(x['valor'])))} a "
+                                                  + comum.pct7(x["pct"]) for x in ok))
+
     comum.cabecalho(mod["titulo"], mod["subtitulo"])
     liberado, motivo = (True, "") if ano == "2026" else motor.pronto_para_uso(cfg)
     if not liberado:
@@ -474,14 +536,15 @@ def render(ano):
             st.caption("Valor do item = valor unitário de tabela × quantidade, sem desconto. "
                        "Os itens que não estão na lista levam o desconto padrão acima.")
             base_exc = pd.DataFrame({"Item": pd.Series(dtype="str"),
-                                     "Valor de tabela (R$)": pd.Series(dtype="float"),
-                                     "Desconto (%)": pd.Series(dtype="float")})
+                                     "Valor de tabela (R$)": pd.Series(dtype="str"),
+                                     "Desconto (%)": pd.Series(dtype="str")})
             st.data_editor(base_exc, num_rows="dynamic", hide_index=True, key=k("exc_editor"),
                            column_config={
                                "Item": st.column_config.TextColumn("Item (nº ou descrição)"),
-                               "Valor de tabela (R$)": st.column_config.NumberColumn(min_value=0.0, format="%.2f"),
-                               "Desconto (%)": st.column_config.NumberColumn(min_value=0.0, max_value=100.0,
-                                                                              format="%.7f")})
+                               "Valor de tabela (R$)": st.column_config.TextColumn(
+                                   help="Ex.: 12.345,67 · pode colar do Focco"),
+                               "Desconto (%)": st.column_config.TextColumn(help="Ex.: 13,5141318")})
+            avisos_editor("exc_editor", "Desconto (%)")
 
         ipi_pad = float(cfg["impostos"].get("ipi") or 0)
         st.checkbox(f"Alguns itens têm IPI diferente de {ipi_pad:g}%".replace(".", ","), key=k("tem_ipi"),
@@ -490,14 +553,15 @@ def render(ano):
             st.caption("Valor do item = valor unitário de tabela × quantidade, sem desconto. "
                        "Se o item também tem desconto diferente, use o mesmo nome nas duas listas.")
             base_ipi = pd.DataFrame({"Item": pd.Series(dtype="str"),
-                                     "Valor de tabela (R$)": pd.Series(dtype="float"),
-                                     "IPI (%)": pd.Series(dtype="float")})
+                                     "Valor de tabela (R$)": pd.Series(dtype="str"),
+                                     "IPI (%)": pd.Series(dtype="str")})
             st.data_editor(base_ipi, num_rows="dynamic", hide_index=True, key=k("ipi_editor"),
                            column_config={
                                "Item": st.column_config.TextColumn("Item (nº ou descrição)"),
-                               "Valor de tabela (R$)": st.column_config.NumberColumn(min_value=0.0, format="%.2f"),
-                               "IPI (%)": st.column_config.NumberColumn(min_value=0.0, max_value=100.0,
-                                                                         format="%.2f")})
+                               "Valor de tabela (R$)": st.column_config.TextColumn(
+                                   help="Ex.: 12.345,67 · pode colar do Focco"),
+                               "IPI (%)": st.column_config.TextColumn(help="Ex.: 6,5")})
+            avisos_editor("ipi_editor", "IPI (%)")
 
     with st.container(border=True):
         st.subheader("4. Frete e montagem")
@@ -564,34 +628,6 @@ def render(ano):
                         help="O orçamento é montado normalmente. Depois o ADM Comercial cria o pedido de "
                              "serviço e ajusta o pedido de produtos com os valores calculados aqui.")
 
-    def ipi_itens_atuais():
-        if not ss.get(k("tem_ipi")):
-            return []
-        return [dict(item=x["item"], valor=x["valor"], ipi=x["pct"])
-                for x in linhas_editor("ipi_editor", "IPI (%)")]
-
-    def excecoes_atuais():
-        if not ss.get(k("tem_exc")):
-            return []
-        return linhas_editor("exc_editor", "Desconto (%)")
-
-    def linhas_editor(chave, col_pct):
-        est = ss.get(k(chave)) or {}
-        linhas = [dict(l) for l in est.get("added_rows", [])]
-        for i, mud in (est.get("edited_rows") or {}).items():
-            if int(i) < len(linhas):
-                linhas[int(i)].update(mud)
-        apagar = set(est.get("deleted_rows") or [])
-        out = []
-        for i, l in enumerate(linhas):
-            if i in apagar:
-                continue
-            v, pct_i = l.get("Valor de tabela (R$)"), l.get(col_pct)
-            if v is None and pct_i is None and not l.get("Item"):
-                continue
-            out.append(dict(item=str(l.get("Item") or f"Item {i + 1}"), valor=v, pct=pct_i))
-        return out
-
     # ---------------- Validação e cálculo ----------------
     def consulta_atual():
         cons = ss.get(k("consulta")) or {}
@@ -646,8 +682,10 @@ def render(ano):
                 f.append("Itens com desconto diferente (ou desmarque a opção)")
             if any(x["valor"] is None or x["pct"] is None for x in exc):
                 f.append("Valor e desconto de cada item com desconto diferente")
-            if lim is not None and any(x["pct"] is not None and x["pct"] > lim for x in exc):
-                f.append(f"Desconto de cada item dentro do limite da equipe ({lim:g}%)".replace(".", ","))
+            acima = [x for x in exc if lim is not None and x["pct"] is not None and x["pct"] > lim]
+            if acima:
+                f.append((f"Desconto de cada item dentro do limite da equipe ({lim:g}%); acima: ".replace(".", ",")
+                          + ", ".join(f"{x['item']} ({comum.pct7(x['pct'])})" for x in acima)))
             if sum((x["valor"] or 0) for x in exc) > (ss.get(k("total_tabela")) or 0) + 0.005:
                 f.append("Soma dos itens com desconto diferente até o Total Itens")
         if ss.get(k("tem_ipi")):
