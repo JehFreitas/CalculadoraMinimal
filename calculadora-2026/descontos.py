@@ -286,7 +286,7 @@ def tabela_comissao(com, equipe, divisao):
 
 
 def faixa_comissao(faixas, pol_pct):
-    """% de comissão para a política informada; None = acima da tabela (não permitido)."""
+    """% de comissão para a política informada; None = acima da tabela (sem comissão)."""
     p = d(pol_pct)
     for maximo, comissao in faixas:
         if p <= d(maximo):
@@ -311,9 +311,9 @@ def comissao_estimada(faixas, total_tabela, cond_pct, pol_pct, excecoes=(), adic
     for v, p in partes:
         liquido = v * fator * (1 - p / 100)
         taxa = faixa_comissao(faixas, p)
-        if taxa is None:
+        if taxa is None:                 # acima da tabela: desconto permitido, sem comissão (nem adicional)
             fora = True
-            taxa = Decimal(0)
-        valor += liquido * (taxa + d(adicional)) / 100
+        else:
+            valor += liquido * (taxa + d(adicional)) / 100
         base += liquido
     return valor, (valor / base * 100 if base else Decimal(0)), fora

@@ -861,7 +861,7 @@
  ],
  "divisao_servico_pct": 40,
  "comissao": {
-  "_leia_me": "Só a Equipe Interna e a Equipe PJ recebem comissão; Prime e Representantes não. Faixas: [desconto máximo da faixa em %, comissão em %]; acima da última faixa: não permitido. divisoes: tabela verde da Equipe Interna (vendedor CLT e agente comercial remunerado), por divisão de venda (Sem RT / Com RT); pedido dividido em produto x serviço soma adicional_divisao à comissão. por_equipe: tabela própria, sem divisão de venda. Equipe PJ = tabela azul (distribuidor comercial e PJ). equipes_sem_divisao_produto_servico (na raiz): equipes que não dividem o pedido em produto e serviço.",
+  "_leia_me": "Só a Equipe Interna e a Equipe PJ recebem comissão; Prime e Representantes não. Faixas: [desconto máximo da faixa em %, comissão em %]. A tabela de comissão não limita o desconto: o limite de desconto é limites_politica; acima da última faixa (ou N/A) o desconto é permitido, sem comissão. divisoes: tabela verde da Equipe Interna (vendedor CLT e agente comercial remunerado), por divisão de venda (Sem RT / Com RT); pedido dividido em produto x serviço soma adicional_divisao à comissão. por_equipe: tabela própria, sem divisão de venda. Equipe PJ = tabela azul (distribuidor comercial e PJ): comissão até 50%, desconto até 52% sem comissão.",
   "equipes": [
    "Equipe Interna",
    "Equipe PJ"

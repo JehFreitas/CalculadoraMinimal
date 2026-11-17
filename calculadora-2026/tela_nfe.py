@@ -238,17 +238,12 @@ def render(ano):
         return bool(ss.get(k("dividir"))) and pode_dividir(ss.get(k("equipe")))
 
     def lim_rotulo(equipe):
-        """Limite mostrado na lista de equipes: o da tabela própria de comissão, quando houver (PJ: 50%)."""
-        propria_ = tabela_propria(equipe)
-        lim_ = float(limites[equipe])
-        return min(lim_, float(max(f[0] for f in propria_["faixas"]))) if propria_ else lim_
+        return float(limites[equipe])
 
     def limite_efetivo(equipe, faixas):
-        """Limite da equipe e, quando há tabela de comissão, o maior desconto permitido na tabela."""
-        lim_eq = limites.get(equipe)
-        if lim_eq is None or not faixas:
-            return lim_eq
-        return min(float(lim_eq), float(faixas[-1][0]))
+        """Limite de desconto da equipe. A tabela de comissão não limita o desconto:
+        acima da última faixa (ou em faixa N/A) o desconto é permitido, sem comissão."""
+        return limites.get(equipe)
 
     def ipi_itens_atuais():
         if not ss.get(k("tem_ipi")):
@@ -920,7 +915,8 @@ def render(ano):
                         + (f" (inclui {float(cmr['adicional']):g}% pela divisão)".replace(".", ",") if cmr["adicional"] else "")
                         + (" · média das faixas dos itens" if e.get("excecoes") else "")))
             if cmr["fora"]:
-                st.warning("Algum desconto está acima da tabela de comissão.")
+                st.warning("Desconto acima da tabela de comissão: "
+                           + ("sem comissão." if not cmr["pct"] else "sem comissão nos itens acima da tabela."))
         st.caption(f"Prazo médio da condição: {float(r['cond_prazo']):.1f} dias · "
                    f"limite da política: {float(r['limite']):g}%".replace(".", ",")
                    + (f" ({e['equipe']}" + (f", {e['divisao_venda']})" if e.get("divisao_venda") else ")")))
