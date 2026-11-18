@@ -110,11 +110,34 @@ def _ors_coord(chave, texto, uf="", estruturado=None):
     return None, "endereço não encontrado no mapa" + (f" em {uf}" if uf else "")
 
 
+def _coord_por_cep(cep, uf):
+    """Coordenadas do CEP pela BrasilAPI (CEP v2). Só vale se o CEP for da UF do cliente."""
+    try:
+        r = requests.get(f"https://brasilapi.com.br/api/cep/v2/{re.sub(r'[^0-9]', '', cep)}", timeout=TIMEOUT)
+        if r.status_code != 200:
+            return None, ""
+        j = r.json()
+        if uf and (j.get("state") or "").upper() != uf:
+            return None, ""
+        c = ((j.get("location") or {}).get("coordinates") or {})
+        lon, lat = c.get("longitude"), c.get("latitude")
+        if not lon or not lat:
+            return None, ""
+        rotulo = ", ".join(x for x in (j.get("street"), j.get("neighborhood"), j.get("city"), j.get("state")) if x)
+        return (float(lon), float(lat)), f"{rotulo} (CEP {cep})"
+    except (requests.RequestException, ValueError, TypeError):
+        return None, ""
+
+
 def _localizar_destino(chave, destino):
     """Tenta do mais preciso ao menos preciso, sempre conferindo a UF do resultado:
     rua + número na cidade → texto limpo → CEP → centro da cidade (aproximado)."""
     rua, cidade, uf, cep = _partes_endereco(destino)
     estado = UF_SIGLAS.get(uf, "")
+    if cep:
+        coord, rotulo = _coord_por_cep(cep, uf)       # 1º: pelo CEP (BrasilAPI)
+        if coord:
+            return coord, rotulo
     tentativas = []
     if rua and cidade:
         tentativas.append(("", dict(address=rua, locality=cidade, region=estado,
