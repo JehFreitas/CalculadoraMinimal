@@ -44,16 +44,95 @@ ORIGEM_FABRICA = "Avenida Henrique Gonçalves Baptista, 2035, Jardim Belval, Bar
 ORS = "https://api.openrouteservice.org"
 
 
-def _ors_coord(chave, texto):
-    r = requests.get(f"{ORS}/geocode/search", timeout=TIMEOUT,
-                     params={"api_key": chave, "text": texto, "boundary.country": "BR", "size": 1})
+UF_SIGLAS = {
+    "AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará",
+    "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso",
+    "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná",
+    "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte",
+    "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo",
+    "SE": "Sergipe", "TO": "Tocantins"}
+
+# complementos que confundem o mapa (sala, apto, conjunto...) ficam de fora da busca
+_COMPLEMENTO = re.compile(r"^\s*(sala|salas|sl|apto|apt|ap|apartamento|conj|conjunto|cj|bloco|bl|andar|loja|lj|"
+                          r"galp[aã]o|box|casa|fundos|frente|lote|lt|quadra|qd|km|torre|unidade|un|edif[ií]cio|"
+                          r"ed|pr[eé]dio|pavimento|pav|lado|anexo|n[ºo°]?\s*$)", re.I)
+
+
+def _sem_acento(t):
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", str(t or "")) if unicodedata.category(c) != "Mn").lower().strip()
+
+
+def _partes_endereco(destino):
+    """Do texto 'Rua X, 123, Sala 4, Bairro · Cidade/UF · CEP 00000-000' tira
+    (logradouro e número, cidade, UF, CEP). Complemento e bairro ficam de fora."""
+    t = (destino or "").replace("\n", " ")
+    cep = re.search(r"(\d{5})-?(\d{3})", t)
+    cep = f"{cep.group(1)}-{cep.group(2)}" if cep else ""
+    cid = re.search(r"([A-Za-zÀ-ÿ'´`.\- ]+?)\s*[/\-]\s*([A-Za-z]{2})\b(?![A-Za-z])", t.split("·", 1)[1] if "·" in t else t)
+    cidade, uf = (cid.group(1).strip(" ,-"), cid.group(2).upper()) if cid else ("", "")
+    if uf not in UF_SIGLAS:
+        cidade, uf = "", ""
+    rua = t.split("·")[0]
+    pedacos = [p.strip() for p in rua.split(",") if p.strip()]
+    logradouro = pedacos[0] if pedacos else ""
+    numero = ""
+    if len(pedacos) > 1 and re.match(r"^(n[ºo°.]?\s*)?\d+[a-zA-Z]?$", pedacos[1], re.I):
+        numero = re.sub(r"^n[ºo°.]?\s*", "", pedacos[1], flags=re.I)
+    return (f"{logradouro} {numero}".strip() if logradouro and not _COMPLEMENTO.match(logradouro) else ""), \
+        cidade, uf, cep
+
+
+def _confere_uf(props, uf):
+    if not uf:
+        return True
+    if (props.get("region_a") or "").upper() == uf:
+        return True
+    return _sem_acento(props.get("region")) == _sem_acento(UF_SIGLAS[uf])
+
+
+def _ors_coord(chave, texto, uf="", estruturado=None):
+    """Coordenadas do primeiro resultado no Brasil (e na UF, quando informada)."""
+    if estruturado:
+        params = dict(estruturado, api_key=chave, country="BR", size=5)
+        url = f"{ORS}/geocode/search/structured"
+    else:
+        params = {"api_key": chave, "text": texto, "boundary.country": "BR", "size": 5}
+        url = f"{ORS}/geocode/search"
+    r = requests.get(url, timeout=TIMEOUT, params=params)
     if r.status_code != 200:
         return None, f"localização indisponível ({r.status_code})"
-    feats = r.json().get("features") or []
-    if not feats:
-        return None, "endereço não encontrado no mapa"
-    lon, lat = feats[0]["geometry"]["coordinates"][:2]
-    return (lon, lat), feats[0].get("properties", {}).get("label", "")
+    for f in r.json().get("features") or []:
+        props = f.get("properties", {})
+        if _confere_uf(props, uf):
+            lon, lat = f["geometry"]["coordinates"][:2]
+            return (lon, lat), props.get("label", "")
+    return None, "endereço não encontrado no mapa" + (f" em {uf}" if uf else "")
+
+
+def _localizar_destino(chave, destino):
+    """Tenta do mais preciso ao menos preciso, sempre conferindo a UF do resultado:
+    rua + número na cidade → texto limpo → CEP → centro da cidade (aproximado)."""
+    rua, cidade, uf, cep = _partes_endereco(destino)
+    estado = UF_SIGLAS.get(uf, "")
+    tentativas = []
+    if rua and cidade:
+        tentativas.append(("", dict(address=rua, locality=cidade, region=estado,
+                                    **({"postalcode": cep} if cep else {})), ""))
+        tentativas.append((f"{rua}, {cidade}, {uf}, Brasil", None, ""))
+    if cep:
+        tentativas.append(("", dict(postalcode=cep, **({"locality": cidade} if cidade else {})), " (pelo CEP)"))
+    if cidade:
+        tentativas.append((f"{cidade}, {estado}, Brasil", None, " (centro da cidade: aproximado)"))
+    if not tentativas:
+        tentativas.append((destino.replace("·", ","), None, ""))
+    ultimo = "endereço não encontrado no mapa"
+    for texto, estr, obs in tentativas:
+        coord, rotulo = _ors_coord(chave, texto, uf, estr)
+        if coord:
+            return coord, rotulo + obs
+        ultimo = rotulo
+    return None, ultimo
 
 
 def distancia_km(st, destino):
@@ -65,10 +144,10 @@ def distancia_km(st, destino):
     if not (destino or "").strip():
         return None, "Sem endereço do cliente: consulte o CNPJ ou informe o endereço de entrega."
     try:
-        origem, _ = _ors_coord(chave, ORIGEM_FABRICA)
+        origem, _ = _ors_coord(chave, ORIGEM_FABRICA, "SP")
         if not origem:
             return None, "Não foi possível localizar a fábrica no mapa. Informe os km manualmente."
-        dest, rotulo = _ors_coord(chave, destino.replace("·", ","))
+        dest, rotulo = _localizar_destino(chave, destino)
         if not dest:
             return None, f"Destino: {rotulo}. Informe os km manualmente."
         r = requests.post(f"{ORS}/v2/directions/driving-car", timeout=TIMEOUT,
