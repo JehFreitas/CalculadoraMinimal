@@ -861,7 +861,9 @@ def render(ano):
     desatualizado = e != entradas_atuais() or any(meta[c] != v for c, v in meta_atual().items())
     sem_ie = e["contribuinte"] == NAO_CONTRIBUINTE
 
-    rot_emb = "DIFAL/FCP embutido" if sem_ie else "ICMS sobre IPI embutido (consumidor final)"
+    so_icms_ipi = r["difal_fcp_embutido"] and not (r["difal"] or r["fcp"])
+    rot_emb = ("ICMS sobre o IPI embutido (não contribuinte: o IPI entra na base do ICMS; não há DIFAL)"
+               if so_icms_ipi else "DIFAL/FCP embutido" if sem_ie else "ICMS sobre IPI embutido (consumidor final)")
     linhas_nf = [("Valor dos itens na NF (vProd)", r["valor_itens_nf"])]
     if r["difal_fcp_embutido"]:
         linhas_nf += [("  · produtos", r["valor_produtos"]),
@@ -912,7 +914,8 @@ def render(ano):
                    else "Acréscimo MONTAGEM (valor, aplicável ao pedido)", erp["montagem"])]
     if erp["difal"] or erp["fcp"]:
         if erp["embutido_sem_guia"]:
-            linhas_erp.append(("Acréscimo DIFAL (valor, aplicável aos itens) · ICMS sobre IPI", erp["difal"]))
+            linhas_erp.append(("Acréscimo DIFAL (999/1/3) com o valor do ICMS sobre o IPI (valor, aplicável aos "
+                               "itens) · não é DIFAL: não há guia", erp["difal"]))
         else:
             linhas_erp.append(("Acréscimo DIFAL (valor, aplicável aos itens)", erp["difal"]))
             if erp["fcp"]:
@@ -1096,7 +1099,8 @@ def render(ano):
             lanc.append(("Desconto", "Desconto Politica (800/2/3)", r["politica_pct"], "Percentual",
                          "Aplicável aos Itens"))
         if erp["difal"]:
-            lanc.append(("Acréscimo", "DIFAL (999/1/3)", erp["difal"], "Valor", "Aplicável aos Itens"))
+            lanc.append(("Acréscimo", "DIFAL (999/1/3) – ICMS sobre IPI" if erp["embutido_sem_guia"]
+                         else "DIFAL (999/1/3)", erp["difal"], "Valor", "Aplicável aos Itens"))
         if erp["fcp"]:
             lanc.append(("Acréscimo", "FUNDO DE COMBATE A POBREZA (999/1/3)", erp["fcp"], "Valor",
                          "Aplicável aos Itens"))
