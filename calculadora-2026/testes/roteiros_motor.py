@@ -75,7 +75,7 @@ def checar(tag, ano="2026", **kw):
         t_prod = r["total_nf"] * (1 - D(str(COM["divisao_servico_pct"])) / 100)
         aliq = D(str(uf["difal"] + uf["fcp"])) / 100 if sem_ie else D(0)
         ipi_prod = t_prod * r["ipi_pct"] / 100 / (1 + r["ipi_pct"] / 100)
-        icms_ipi = D(str(uf["icms_interestadual"])) / 100 * ipi_prod if sem_ie else D(0)
+        icms_ipi = D(str(uf["icms_interestadual"])) / 100 * ipi_prod if (sem_ie and aliq) else D(0)
         if abs(E * (1 - carga_s) - aliq * t_prod - icms_ipi) > C:
             falha(tag, f"dividido: embutido {E:.2f} não cobre guias da NF-e de produtos + ICMS s/ IPI")
         sd = r["sem_divisao"]

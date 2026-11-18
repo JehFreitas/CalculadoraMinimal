@@ -134,7 +134,10 @@ def calcular(e, cfg):
     #   E·k = (DIFAL+FCP)·NF + a·ICMS·IPI,   k = 1 − a·ICMS − b·PC·(1 − a·ICMS)
     uso_consumo = (not sem_ie and e.get("finalidade") == CONSUMIDOR_FINAL
                    and imp.get("icms_sobre_ipi_ie_uso_consumo"))
-    a_flag = imp.get("icms_sobre_ipi_e_difal_sem_ie") if sem_ie else uso_consumo
+    # Sem guia de DIFAL/FCP (venda dentro de SP), o ICMS sobre o IPI é absorvido pela empresa,
+    # salvo se o Adm ligar icms_sobre_ipi_sem_difal.
+    a_flag = (imp.get("icms_sobre_ipi_e_difal_sem_ie")
+              and ((DIFAL + FCP) > 0 or imp.get("icms_sobre_ipi_sem_difal", False))) if sem_ie else uso_consumo
     a = Decimal(1) if a_flag else Decimal(0)
     b = Decimal(1) if ((sem_ie or uso_consumo) and imp.get("pis_cofins_sobre_difal_embutido", True)) else Decimal(0)
     k = 1 - a * ICMS - b * PC * (1 - a * ICMS)

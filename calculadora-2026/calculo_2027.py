@@ -59,6 +59,8 @@ def calcular(e, cfg):
     consumidor_final = sem_ie or (e.get("finalidade") == CONSUMIDOR_FINAL
                                   and imp.get("icms_sobre_ipi_ie_uso_consumo"))
     icms_sobre_ipi = IPI > 0 and consumidor_final
+    # embute o ICMS sobre o IPI só quando há guia de DIFAL/FCP (dentro de SP a empresa absorve)
+    embute_icms_ipi = icms_sobre_ipi and ((DIFAL + FCP) > 0 or imp.get("icms_sobre_ipi_sem_difal", False))
 
     if res["empresa_tem_lucro"]:
         aliq_ir = pct(res["irpj"]) + pct(res["csll"])
@@ -102,7 +104,7 @@ def calcular(e, cfg):
             base_icms = (soma + A * T * (liq_P + liq_F + liq_M + liq_E)
                          + (ipi if icms_sobre_ipi else 0))
             guias = (DIFAL + FCP) * base_icms
-            necessario = guias + (I * ipi if icms_sobre_ipi else 0)
+            necessario = guias + (I * ipi if embute_icms_ipi else 0)
             novo_liq = necessario
             novo_E = linha(novo_liq) if necessario else Decimal(0)
             if abs(novo_E - E) < Decimal("0.0001"):
@@ -149,7 +151,7 @@ def calcular(e, cfg):
         valor_produtos=P,
         frete_nf=r["frete_final"],
         despesas_acessorias_nf=r["montagem_final"],
-        sobra_difal=r["liq_E"] - r["difal"] - r["fcp"] - (I * r["ipi"] if icms_sobre_ipi else 0),
+        sobra_difal=r["liq_E"] - r["difal"] - r["fcp"] - (I * r["ipi"] if embute_icms_ipi else 0),
         resultado_estimado=resultado,
         multiplicador=(1 + A * T * I) / (1 - I),
         carga=I,
