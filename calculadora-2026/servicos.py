@@ -194,11 +194,14 @@ ARQUIVOS_CONFIG = ("config.json", "config_2027.json", "config_comercial.json", "
 PASTA_APP = os.path.dirname(os.path.abspath(__file__))
 
 
+CONFIG_REPO_PADRAO = "JehFreitas/calculadora-minimal-config"
+
+
 def _destino_config(gh):
     """Onde ficam os parâmetros. Com [github] config_repo: num repositório PRIVADO só de parâmetros
     (raiz do repositório). Sem ele: no próprio repositório do app (modo antigo)."""
-    if gh.get("config_repo"):
-        return gh["config_repo"], gh.get("config_branch", "main"), ""
+    if gh.get("config_repo") or gh.get("token"):
+        return gh.get("config_repo") or CONFIG_REPO_PADRAO, gh.get("config_branch", "main"), ""
     pasta = gh.get("pasta") or os.path.dirname(gh.get("path", "calculadora-2026/config.json"))
     return gh["repo"], gh.get("branch", "main"), pasta
 
@@ -209,7 +212,7 @@ def carregar_configs_privados(st):
     Retorna (ok, mensagem)."""
     gh = _secao(st, "github") or {}
     faltam = [a for a in ARQUIVOS_CONFIG if not os.path.exists(os.path.join(PASTA_APP, a))]
-    if not gh.get("config_repo"):
+    if not (gh.get("config_repo") or gh.get("token")):
         if faltam:
             return False, ("Parâmetros não encontrados: configure [github] token e config_repo "
                            "nos Secrets do Streamlit.")
