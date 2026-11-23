@@ -190,13 +190,62 @@ def distancia_km(st, destino):
 # Parâmetros: gravar o config.json no GitHub
 # [github] token, repo, branch, path
 # ------------------------------------------------------------------
+ARQUIVOS_CONFIG = ("config.json", "config_2027.json", "config_comercial.json", "config_cavaletti.json")
+PASTA_APP = os.path.dirname(os.path.abspath(__file__))
+
+
+def _destino_config(gh):
+    """Onde ficam os parâmetros. Com [github] config_repo: num repositório PRIVADO só de parâmetros
+    (raiz do repositório). Sem ele: no próprio repositório do app (modo antigo)."""
+    if gh.get("config_repo"):
+        return gh["config_repo"], gh.get("config_branch", "main"), ""
+    pasta = gh.get("pasta") or os.path.dirname(gh.get("path", "calculadora-2026/config.json"))
+    return gh["repo"], gh.get("branch", "main"), pasta
+
+
+def carregar_configs_privados(st):
+    """Baixa os parâmetros do repositório privado (secrets [github] token + config_repo) para a
+    pasta do app, uma vez por processo. Os arquivos não ficam no repositório público.
+    Retorna (ok, mensagem)."""
+    gh = _secao(st, "github") or {}
+    faltam = [a for a in ARQUIVOS_CONFIG if not os.path.exists(os.path.join(PASTA_APP, a))]
+    if not gh.get("config_repo"):
+        if faltam:
+            return False, ("Parâmetros não encontrados: configure [github] token e config_repo "
+                           "nos Secrets do Streamlit.")
+        return True, "Parâmetros locais."
+    if getattr(carregar_configs_privados, "_feito", False) and not faltam:
+        return True, "Parâmetros já carregados."
+    repo, branch, _ = _destino_config(gh)
+    headers = {"Authorization": f"Bearer {gh.get('token', '')}",
+               "Accept": "application/vnd.github.raw+json",
+               "X-GitHub-Api-Version": "2022-11-28"}
+    erros = []
+    for arq in ARQUIVOS_CONFIG:
+        try:
+            r = requests.get(f"https://api.github.com/repos/{repo}/contents/{quote(arq)}",
+                             headers=headers, params={"ref": branch}, timeout=TIMEOUT)
+            if r.status_code != 200:
+                erros.append(f"{arq} ({r.status_code})")
+                continue
+            json.loads(r.text)                                   # confere que é JSON válido
+            with open(os.path.join(PASTA_APP, arq), "w", encoding="utf-8") as f:
+                f.write(r.text)
+        except (requests.RequestException, ValueError, OSError) as exc:
+            erros.append(f"{arq} ({exc.__class__.__name__})")
+    ainda_faltam = [a for a in ARQUIVOS_CONFIG if not os.path.exists(os.path.join(PASTA_APP, a))]
+    carregar_configs_privados._feito = not ainda_faltam
+    if ainda_faltam:
+        return False, "Não foi possível carregar os parâmetros: " + ", ".join(erros or ainda_faltam) + "."
+    return True, ("Parâmetros carregados." if not erros else
+                  "Parâmetros carregados (alguns da cópia anterior): " + ", ".join(erros) + ".")
+
+
 def salvar_config_github(st, cfg, arquivo="config.json", autor="Tela de Parâmetros (Adm)"):
     gh = _secao(st, "github")
-    if not gh or not gh.get("token") or not gh.get("repo"):
+    if not gh or not gh.get("token") or not (gh.get("repo") or gh.get("config_repo")):
         return False, "Integração com o GitHub não configurada (secrets [github])."
-    repo = gh["repo"]
-    branch = gh.get("branch", "main")
-    pasta = gh.get("pasta") or os.path.dirname(gh.get("path", "calculadora-2026/config.json"))
+    repo, branch, pasta = _destino_config(gh)
     path = f"{pasta}/{arquivo}" if pasta else arquivo
     url = f"https://api.github.com/repos/{repo}/contents/{quote(path)}"
     headers = {"Authorization": f"Bearer {gh['token']}",

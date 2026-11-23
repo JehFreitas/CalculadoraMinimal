@@ -20,7 +20,7 @@ Os cálculos de 2027 ficam visíveis, mas só o Adm consegue simular. Para liber
 | `app.py` | Menu lateral e área do Adm (arquivo que o Streamlit executa) |
 | `tela_nfe.py`, `tela_cavaletti.py` | Telas |
 | `calculo.py`, `calculo_2027.py`, `cavaletti.py` | Regras de cálculo |
-| `config.json`, `config_2027.json`, `config_cavaletti.json` | Parâmetros, editáveis pela área do Adm |
+| `config.json`, `config_2027.json`, `config_cavaletti.json` | Parâmetros, editáveis pela área do Adm. **Não ficam neste repositório** (ver Parâmetros privados) |
 | `config_comercial.json`, `descontos.py` | Condições de pagamento, limites da política e cálculo do desconto |
 | `consulta.py` | Consulta do cliente pelo CNPJ (CNPJá) |
 | `servicos.py`, `comum.py` | Planilha, e-mail, GitHub, PDF |
@@ -70,3 +70,24 @@ pip install -r requirements.txt
 cp .streamlit/secrets.toml.exemplo .streamlit/secrets.toml
 streamlit run app.py --server.enableCORS false --server.enableXsrfProtection false
 ```
+
+
+## Parâmetros privados
+
+Impostos, condições de pagamento, limites de desconto, tabelas de comissão e regras de frete/montagem
+ficam no repositório **privado** `JehFreitas/calculadora-minimal-config` (arquivos `config.json`,
+`config_2027.json`, `config_comercial.json`, `config_cavaletti.json` na raiz). O código deste repositório
+é público e não traz esses valores.
+
+Secrets do Streamlit:
+
+```toml
+[github]
+token = "..."              # token com acesso de leitura e escrita (Contents) aos dois repositórios
+repo = "JehFreitas/CalculadoraMinimal"
+config_repo = "JehFreitas/calculadora-minimal-config"
+config_branch = "main"
+```
+
+Ao abrir, a calculadora baixa os parâmetros do repositório privado. Quando o Adm salva parâmetros na
+tela, eles são gravados no repositório privado.

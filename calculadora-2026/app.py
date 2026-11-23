@@ -4,7 +4,7 @@
 # Menu lateral com quatro cálculos:
 #   NF-e Minimal 2026 / 2027                 -> tela_nfe.py   (calculo.py, calculo_2027.py)
 #   Venda Assistida Cavaletti 2026 / 2027    -> tela_cavaletti.py (cavaletti.py)
-# Parâmetros: config.json, config_2027.json, config_cavaletti.json (editáveis pelo Adm).
+# Parâmetros: config*.json, num repositório privado ([github] config_repo nos Secrets); editáveis pelo Adm.
 # Senhas e chaves: Secrets do Streamlit Cloud (ver LEIA-ME.md).
 
 import streamlit as st
@@ -15,6 +15,13 @@ import tela_nfe
 
 st.set_page_config(page_title="Calculadora Comercial - Minimal", layout="wide")
 st.markdown(comum.CSS, unsafe_allow_html=True)
+
+# Parâmetros (impostos, condições, limites, comissões) ficam num repositório privado.
+import servicos  # noqa: E402
+_ok_cfg, _msg_cfg = servicos.carregar_configs_privados(st)
+if not _ok_cfg:
+    st.error(_msg_cfg + " Avise o ADM Comercial.")
+    st.stop()
 
 
 def nfe_2026():
