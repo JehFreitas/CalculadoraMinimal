@@ -73,6 +73,11 @@ def _partes_endereco(destino):
     cidade, uf = (cid.group(1).strip(" ,-"), cid.group(2).upper()) if cid else ("", "")
     if uf not in UF_SIGLAS:
         cidade, uf = "", ""
+    so_uf = re.search(r"\bUF\s+([A-Z]{2})\b", t)            # destino só por CEP: "CEP 00000-000 · UF SP"
+    if so_uf and so_uf.group(1) in UF_SIGLAS:
+        uf = so_uf.group(1)
+    if t.strip().upper().startswith("CEP"):
+        return "", cidade, uf, cep
     rua = t.split("·")[0]
     pedacos = [p.strip() for p in rua.split(",") if p.strip()]
     logradouro = pedacos[0] if pedacos else ""

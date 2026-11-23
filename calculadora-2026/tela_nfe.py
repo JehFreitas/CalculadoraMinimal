@@ -328,7 +328,9 @@ def render(ano):
         cons = ss.get(k("consulta")) or {}
         if not (cons.get("ok") and cons.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj"), ""))
                 and cons.get("endereco")):
-            return ""
+            cep = consulta.so_digitos(ss.get(k("cep_montagem"), ""))
+            uf = next((sg for sg, nome in consulta.UF_NOME.items() if nome == ss.get(k("estado"))), "")
+            return f"CEP {cep[:5]}-{cep[5:]}" + (f" · UF {uf}" if uf else "") if len(cep) == 8 else ""
         if ss.get(k("end_confirma")) == END_NAO:
             return (ss.get(k("end_entrega")) or "").strip()
         return cons["endereco"]
@@ -594,6 +596,16 @@ def render(ano):
                 st.file_uploader("Print da cotação da montagem *", type=["png", "jpg", "jpeg"], key=k("cot_montagem"),
                                  help="Imagem da cotação confirmada pela Lia. Vai no PDF da simulação.")
             if ss.get(k("montagem_opcao")) == "Calcular" and estado and cidade and not sp_capital:
+                cons_ = ss.get(k("consulta")) or {}
+                if not (cons_.get("ok") and cons_.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj"), ""))
+                        and cons_.get("endereco")):
+                    st.text_input("CEP do local de montagem (opcional)", key=k("cep_montagem"),
+                                  placeholder="00000-000",
+                                  help="Sem CNPJ consultado, informe o CEP para a calculadora achar a distância. "
+                                       "Ou digite os km abaixo.")
+                    cep_ = consulta.so_digitos(ss.get(k("cep_montagem"), ""))
+                    if cep_ and len(cep_) != 8:
+                        st.caption(":red[CEP com 8 números. Exemplo: 12246-870]")
                 dest = destino_km()
                 if dest:
                     atualizar_km(dest)
