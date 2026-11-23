@@ -599,10 +599,10 @@ def render(ano):
                 cons_ = ss.get(k("consulta")) or {}
                 if not (cons_.get("ok") and cons_.get("cnpj") == consulta.so_digitos(ss.get(k("cnpj"), ""))
                         and cons_.get("endereco")):
-                    st.text_input("CEP do local de montagem (opcional)", key=k("cep_montagem"),
+                    st.text_input("CEP do local de montagem *", key=k("cep_montagem"),
                                   placeholder="00000-000",
-                                  help="Sem CNPJ consultado, informe o CEP para a calculadora achar a distância. "
-                                       "Ou digite os km abaixo.")
+                                  help="Sem CNPJ consultado, informe o CEP do local da montagem: a calculadora "
+                                       "acha a distância pela rota.")
                     cep_ = consulta.so_digitos(ss.get(k("cep_montagem"), ""))
                     if cep_ and len(cep_) != 8:
                         st.caption(":red[CEP com 8 números. Exemplo: 12246-870]")
@@ -618,12 +618,21 @@ def render(ano):
                                     help="Rota de rodovia da fábrica (Av. Henrique Gonçalves Baptista, 2035 – "
                                          "Barueri) até o endereço de entrega, ida e volta.")
                     st.caption("🔒 " + ss[k("km_msg")] + " Calculado pelo endereço; não pode ser alterado.")
-                else:
-                    st.number_input("Distância ida e volta (km) de Barueri-SP *", min_value=0.0, format="%.0f",
-                                    key=k("km_ida_volta"),
+                elif comum.adm_logado():
+                    # só o ADM (Área restrita aberta) pode digitar os km, quando a rota não sai
+                    st.number_input("Distância ida e volta (km) de Barueri-SP * (ADM)", min_value=0.0,
+                                    format="%.0f", key=k("km_ida_volta"),
                                     **({} if k("km_ida_volta") in ss else {"value": None}))
                     if dest and ss.get(k("km_msg")):
                         st.caption(ss[k("km_msg")])
+                        st.button("🔄 Tentar calcular os km de novo", key=k("btn_km"),
+                                  on_click=lambda d=dest: atualizar_km(d, forcar=True))
+                else:
+                    ss[k("km_ida_volta")] = None
+                    if dest and ss.get(k("km_msg")):
+                        st.warning(ss[k("km_msg")].replace(" Informe os km manualmente.", "")
+                                   + " Confira o CEP ou o endereço e tente de novo. "
+                                   "Se não resolver, fale com o ADM Comercial.")
                         st.button("🔄 Tentar calcular os km de novo", key=k("btn_km"),
                                   on_click=lambda d=dest: atualizar_km(d, forcar=True))
             if not sem_cobranca and ss.get(k("montagem_opcao")) not in (None, "Não contratar"):
@@ -735,7 +744,9 @@ def render(ano):
         if ss.get(k("montagem_opcao")) == "Informar valor negociado" and not ss.get(k("cot_montagem")):
             f.append("Print da cotação da montagem")
         if ss.get(k("montagem_opcao")) == "Calcular" and not sp_capital and not ss.get(k("km_ida_volta")):
-            f.append("Distância ida e volta (km)")
+            sem_dest = not destino_km()
+            f.append("CEP do local de montagem" if sem_dest and not comum.adm_logado()
+                     else "Distância ida e volta (km): a rota não foi calculada")
         return f
 
     def entradas_atuais():

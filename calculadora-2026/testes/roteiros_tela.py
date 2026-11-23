@@ -60,7 +60,7 @@ if not getattr(comum, "_patched", False):
     def rota(st, d):
         if os.environ.get("ROTA") == "falha":
             return None, "Não foi possível calcular a rota."
-        return (2247.0 if "Porto Alegre" in d else 190.0 if "Campinas" in d else 60.0), "Rota até " + d
+        return (2247.0 if "Porto Alegre" in d else 190.0 if "Campinas" in d else 30.0 if d.startswith("CEP") else 60.0), "Rota até " + d
     servicos.distancia_km = rota
     def envio(st, valores, assunto, corpo, anexos, tipo="nfe"):
         for nome, b in anexos:
@@ -95,7 +95,7 @@ def nova(adm=False, rota="ok", tag="x"):
 BASE = dict(vendedor="Vendedor Teste", cliente="Cliente", orcamento="9999", estado="Rio De Janeiro",
             cidade="Capital", contribuinte=consulta and "Não contribuinte (mesmo com IE)", total_tabela=80000.0,
             condicao=105, equipe="Equipe Interna", divisao_venda="Sem RT", modo_pol="Informar o % da política", politica=35.0,
-            frete_opcao="Calcular", montagem_opcao="Calcular", km_ida_volta=30.0)
+            frete_opcao="Calcular", montagem_opcao="Calcular", cep_montagem="20040-020")
 
 
 def preencher(at, **v):
@@ -255,11 +255,12 @@ def u13():
 
 def u14():
     at = preencher(nova(), cidade="Interior")
-    at.session_state[P + "km_ida_volta"] = None
-    at.run()
+    at.text_input(key=P + "cep_montagem").set_value("").run()
     at = calcular(at)
-    if not any("Distância" in e.value for e in at.error):
-        return "km vazio sem bloqueio"
+    if not any("CEP do local de montagem" in e.value for e in at.error):
+        return "montagem sem CEP não bloqueou"
+    if any(n.key == P + "km_ida_volta" and not n.disabled for n in at.number_input):
+        return "vendedor ainda consegue digitar os km"
 
 
 def com_cnpj(at, c):
@@ -352,16 +353,23 @@ def u20():
 def u21():
     at = com_cnpj(nova(rota="falha", tag="u21"), C_RS)
     preencher(at, estado=None, cidade=None, contribuinte="Contribuinte do ICMS", finalidade="Representantes",
-              km_ida_volta=None)
+              cep_montagem=None)
     at.radio(key=P + "end_confirma").set_value("Sim, entrega e faturamento neste endereço").run()
-    ni = at.number_input(key=P + "km_ida_volta")
-    if ni.disabled:
-        return "rota falhou mas o km ficou travado"
+    if any(n.key == P + "km_ida_volta" for n in at.number_input):
+        return "rota falhou e o vendedor pode digitar os km"
     if not any(b.key == P + "btn_km" for b in at.button):
         return "sem botão para tentar de novo"
-    ni.set_value(500.0).run()
     at = calcular(at)
-    return ok_calc(at, "u21")
+    if not any("rota não foi calculada" in e.value for e in at.error):
+        return "rota falhou e o cálculo não foi bloqueado"
+    # ADM pode digitar
+    at2 = com_cnpj(nova(adm=True, rota="falha", tag="u21b"), C_RS)
+    preencher(at2, estado=None, cidade=None, contribuinte="Contribuinte do ICMS", finalidade="Representantes",
+              cep_montagem=None)
+    at2.radio(key=P + "end_confirma").set_value("Sim, entrega e faturamento neste endereço").run()
+    at2.number_input(key=P + "km_ida_volta").set_value(500.0).run()
+    at2 = calcular(at2)
+    return ok_calc(at2, "u21b")
 
 
 def u22():
