@@ -41,6 +41,8 @@ def token_cnpja(st):
 # [rotas] ors_key = "..."   (chave gratuita em openrouteservice.org)
 # ------------------------------------------------------------------
 ORIGEM_FABRICA = "Avenida Henrique Gonçalves Baptista, 2035, Jardim Belval, Barueri, SP, 06420-130, Brasil"
+# Coordenadas fixas da fábrica (CEP 06420-130, IBGE): evita geocodificar a origem a cada cálculo.
+ORIGEM_COORD = (-46.8974245, -23.5160977)  # (longitude, latitude)
 ORS = "https://api.openrouteservice.org"
 
 
@@ -172,9 +174,7 @@ def distancia_km(st, destino):
     if not (destino or "").strip():
         return None, "Sem endereço do cliente: consulte o CNPJ ou informe o endereço de entrega."
     try:
-        origem, _ = _ors_coord(chave, ORIGEM_FABRICA, "SP")
-        if not origem:
-            return None, "Não foi possível localizar a fábrica no mapa. Informe os km manualmente."
+        origem = ORIGEM_COORD
         dest, rotulo = _localizar_destino(chave, destino)
         if not dest:
             return None, f"Destino: {rotulo}. Informe os km manualmente."
