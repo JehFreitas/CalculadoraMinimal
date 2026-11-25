@@ -43,7 +43,9 @@ def token_cnpja(st):
 ORIGEM_FABRICA = "Avenida Henrique Gonçalves Baptista, 2035, Jardim Belval, Barueri, SP, 06420-130, Brasil"
 # Coordenadas fixas da fábrica (CEP 06420-130, IBGE): evita geocodificar a origem a cada cálculo.
 ORIGEM_COORD = (-46.8974245, -23.5160977)  # (longitude, latitude)
-ORS = "https://api.openrouteservice.org"
+# api.openrouteservice.org foi desligado em nov/2026 (responde 410). Novo endereço, mesma chave:
+ORS_ROTAS = "https://api.heigit.org/openrouteservice"   # /v2/directions/...
+ORS_GEOCODE = "https://api.heigit.org/pelias/v1"        # /search e /search/structured
 
 
 UF_SIGLAS = {
@@ -102,10 +104,10 @@ def _ors_coord(chave, texto, uf="", estruturado=None):
     """Coordenadas do primeiro resultado no Brasil (e na UF, quando informada)."""
     if estruturado:
         params = dict(estruturado, api_key=chave, country="BR", size=5)
-        url = f"{ORS}/geocode/search/structured"
+        url = f"{ORS_GEOCODE}/search/structured"
     else:
         params = {"api_key": chave, "text": texto, "boundary.country": "BR", "size": 5}
-        url = f"{ORS}/geocode/search"
+        url = f"{ORS_GEOCODE}/search"
     r = requests.get(url, timeout=TIMEOUT, params=params)
     if r.status_code != 200:
         return None, f"localização indisponível ({r.status_code})"
@@ -178,7 +180,7 @@ def distancia_km(st, destino):
         dest, rotulo = _localizar_destino(chave, destino)
         if not dest:
             return None, f"Destino: {rotulo}. Informe os km manualmente."
-        r = requests.post(f"{ORS}/v2/directions/driving-car", timeout=TIMEOUT,
+        r = requests.post(f"{ORS_ROTAS}/v2/directions/driving-car", timeout=TIMEOUT,
                           headers={"Authorization": chave, "Content-Type": "application/json"},
                           json={"coordinates": [list(origem), list(dest)]})
         if r.status_code != 200:
